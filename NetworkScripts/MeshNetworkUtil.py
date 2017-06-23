@@ -62,7 +62,7 @@ class MeshNetworkUtil:
     def sendData(self, data, host):
         try :
             #Set the whole string
-            self.socketUDP.sendto(data, (host, self.clientPorts[host]))
+            self.socketUDP.sendto(data, (host, self.PORT))
             self.startListening()
             #d = self.socketUDP.recvfrom(20480)
             #reply = d[0]
