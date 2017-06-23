@@ -9,11 +9,15 @@ class MeshNetworkUtil:
     PORT = 7331 # Random port
     DONE = False
     isServer = True
+    debug = False
     clientPorts = {'127.0.0.1' : 7331 }
     
     # Datagram (udp) socket
-    def __init__(self):
+    def __init__(self, debugOn = False):
         """Open socket for listening"""
+        if debugOn: #Turn on debugging, off by default
+            self.debug = True
+        
         try :
             self.socketUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.clientPorts[socket.gethostbyname(socket.gethostname())] = self.PORT
@@ -23,7 +27,8 @@ class MeshNetworkUtil:
         # Bind socket to local host and port
         try:
             self.socketUDP.bind((self.HOST, self.PORT))
-            print 'Socket bind complete'
+            if self.debug:
+                print 'Socket bind complete'
         except socket.error , msg:
             print 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
             self.isServer = False
@@ -52,7 +57,8 @@ class MeshNetworkUtil:
             #self.socketUDP.sendto(reply , addr)
             if data == 'STOP':
                 self.closeSocket()
-            print 'Message[' + addr[0] + ':' + str(addr[1]) + '] - ' + data.strip()
+            if self.debug:
+                print 'Message[' + addr[0] + ':' + str(addr[1]) + '] - ' + data.strip()
             self.clientPorts[addr[0]] = addr[1]
 
     def closeSocket(self):
@@ -70,3 +76,4 @@ class MeshNetworkUtil:
         except socket.error, msg:
             print 'Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
             self.closeSocket()
+
