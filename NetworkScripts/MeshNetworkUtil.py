@@ -17,7 +17,7 @@ class MeshNetworkUtil:
         """Open socket for listening"""
         if debugOn: #Turn on debugging, off by default
             self.debug = True
-        
+        self.mbox = Queue()
         try :
             self.socketUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.clientPorts[socket.gethostbyname(socket.gethostname())] = self.PORT
@@ -30,7 +30,7 @@ class MeshNetworkUtil:
             if self.debug:
                 print 'Socket bind complete'
         except socket.error , msg:
-            print 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
+            print '[' + str(msg[0]) + '] : ' + msg[1]
             self.isServer = False
         if self.isServer:
             self.startListening()
@@ -60,12 +60,15 @@ class MeshNetworkUtil:
             if self.debug:
                 print 'Message[' + addr[0] + ':' + str(addr[1]) + '] - ' + data.strip()
             self.clientPorts[addr[0]] = addr[1]
+            self.mbox.put(data)
 
     def closeSocket(self):
         self.DONE = True
         self.socketUDP.close()
 
     def sendData(self, data, host):
+        if self.debug:
+            print 'sendData( data = ' + data + ', host = ' + host + ' )' 
         try :
             #Set the whole string
             self.socketUDP.sendto(data, (host, self.PORT))
@@ -74,6 +77,15 @@ class MeshNetworkUtil:
             #reply = d[0]
             #addr = d[1]
         except socket.error, msg:
-            print 'Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
+            print '[' + str(msg[0]) + '] : ' + msg[1]
             self.closeSocket()
 
+    def getData(self):
+        try :
+            data = self.mbox.get(False)
+            if self.debug:
+                print 'getData() -> ' + data
+            return data
+        except :
+            print 'Queue empty'
+            return 'None'
