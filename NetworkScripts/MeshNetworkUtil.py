@@ -2,7 +2,7 @@ import socket, threading, sys
 import traceback, os
 import time, math
 from Queue import Queue
-from MeshUDPPacket import MeshPacket
+#from MeshUDPPacket import MeshPacket
 
 class MeshNetworkUtil:
     HOST = ''   # Listen to all 
