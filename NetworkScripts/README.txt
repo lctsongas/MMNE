@@ -1,2 +1,6 @@
+Version 0.2
+Only use the MeshNetworkUtil.py file in your programs.
+Let me know if you run into any errors!
+Version 0.1
 This is the baseline version.
 More iterations will come!
