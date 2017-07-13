@@ -37,9 +37,9 @@ pwm3 = 235
 pwm4 = 240
 
 #performance options
-fullstopturn = 10 #(degrees) full stop turn if angle difference between heading and bearing is greater than amount
-slow_turnoffset = 3 #(PWM) offset supplied to motors during a slow turn
-rotation_speed = 70 #speed to rotate at full stop (value PWM between 0 and 255)
+fullstopturn = 15 #(degrees) full stop turn if angle difference between heading and bearing is greater than amount
+slow_turnoffset = 20 #(PWM) offset supplied to motors during a slow turn
+#BROKEN#rotation_speed = 250 #speed to rotate at full stop (value PWM between 0 and 255)
 min_angle_correction = 2 #minimum angle between heading and bearing at which robot returns to straight trajectory
 min_distance_correction = 1 #minimum meters when rover stops and has hit the target destination
 
@@ -123,10 +123,10 @@ while True:
         if angle_diff >= fullstopturn:
             if ismovingforward:
                 ismovingforward = motor_op.gradstop(pwm1, pwm2, pwm3, pwm4)
-                isturning = motor_op.allrotate(isclockwise, rotation_speed)
+                isturning = motor_op.seesaw_turn(isclockwise, False)
                 print('1')
             elif not isturning:
-                isturning = motor_op.allrotate(isclockwise, rotation_speed)
+                isturning = motor_op.seesaw_turn(isclockwise, False)
                 print('2')
         else:
             if angle_diff < min_angle_correction:
