@@ -1,4 +1,4 @@
-These files will replace the default files in the hsmm-pi fodlers on the RPi once they are setup.
+These files will replace the default files in the hsmm-pi folders on the RPi once they are setup.
 If you wish to make changes to:
 1. Files in hsmm-pi listed here:
   - change the file and once done, run the shell script found under MMNE/Network/Config/hsmm-copy.sh.
