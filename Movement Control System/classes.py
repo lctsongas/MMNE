@@ -1,7 +1,7 @@
 import logging
 import sys
 import time
-import time
+import math
 import atexit
 
 from Adafruit_BNO055 import BNO055
@@ -15,10 +15,10 @@ class IMU(object):
         if not self.bno.begin():
             raise RuntimeError('Failed to initialize BNO055! Is the sensor connected?')
         # Load Calibration profile
-        self.Load_Calibration_Profile()
+        self.load_calibration_profile()
         
         
-    def Load_Calibration_Profile(self):
+    def load_calibration_profile(self):
         self.infile= open('cal_prof','rb')
         self.data=self.infile.read()
         self.infile.close()
@@ -28,7 +28,17 @@ class IMU(object):
     def calibration_status(self):
         self.sys,self.gyro,self.accel,self.mag=self.bno.get_calibration_status()
         print('Sys_cal={0} Gyro_cal={1} Accel_cal={2} Mag_cal={3}'.format(self.sys, self.gyro, self.accel, self.mag))
-     
+
+    def zero_north(self):
+        self.x,self.y,self.z=self.bno.read_magnetometer()
+        self._North_=math.atan2(self.y,self.x)
+        self.degree=math.degrees(self._North_)
+        return (self.degree)
+
+    def heading_euler(self):
+        self.heading,self.roll,self.pitch=self.bno.read_euler()
+        return(self.heading))
+        
 
 
 class Motor_Operations(object):
@@ -102,20 +112,7 @@ class Motor_Operations(object):
 
 
     
-    
 
-imu=IMU()
-imu.calibration_status()
-
-#motor=Motor_Operations()
-
-#while True:
- #   motor.rotate_Cwise()
-#motor.allstop()
-
-#imu.calibrate_imu()
-#time.sleep(10)
-#imu.calibration_status()
 
 
 
