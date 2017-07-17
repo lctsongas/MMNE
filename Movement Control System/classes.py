@@ -3,12 +3,14 @@ import sys
 import time
 import math
 import atexit
+from threading import Thread
+
 
 from Adafruit_BNO055 import BNO055
 from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
 
 
-class IMU(object):
+class IMU_Operations(object):
     def __init__(self):
         self.bno = BNO055.BNO055(serial_port='/dev/ttyAMA0', rst=18)
         # Initialize the BNO055 and stop if something went wrong.
@@ -16,6 +18,7 @@ class IMU(object):
             raise RuntimeError('Failed to initialize BNO055! Is the sensor connected?')
         # Load Calibration profile
         self.load_calibration_profile()
+        self.heading_euler()
         
         
     def load_calibration_profile(self):
@@ -36,8 +39,15 @@ class IMU(object):
         return (self.degree)
 
     def heading_euler(self):
-        self.heading,self.roll,self.pitch=self.bno.read_euler()
-        return(self.heading))
+        while True:
+            self.heading,self.roll,self.pitch=self.bno.read_euler()
+            return(self.heading)
+
+    def heading_euler_p(self):
+        while True:
+            self.heading,self.roll,self.pitch=self.bno.read_euler()
+            print(self.heading)
+            time.sleep(1)
         
 
 
@@ -80,35 +90,61 @@ class Motor_Operations(object):
         self.motor2.run(Adafruit_MotorHAT.BACKWARD)
         self.motor3.run(Adafruit_MotorHAT.BACKWARD)
         self.motor4.run(Adafruit_MotorHAT.BACKWARD)
+
     def rotate_CCwise(self):
         for i in xrange(1):
             x=5
             y=0
             while x>0:
-                self.forward(250,50,250,50)
-                time.sleep(0.02)
+                self.forward(250,0,250,0)
+                time.sleep(0.002)
                 x-=1
                 y+=1
             while y>0:
-                self.reverse(50,250,50,250)
-                time.sleep(0.02)
+                self.reverse(0,250,0,250)
+                time.sleep(0.002)
                 y-=1
                 x+=1
+            self.allstop()
+
     def rotate_Cwise(self):
         for i in xrange(1):
             x=5
             y=0
             while x>0:
-                self.reverse(250,50,250,50)
-                time.sleep(0.02)
+                self.reverse(250,0,250,0)
+                time.sleep(0.002)
                 x-=1
                 y+=1
             while y>0:
-                self.forward(50,250,50,250)
-                time.sleep(0.02)
+                self.forward(0,250,0,250)
+                time.sleep(0.002)
                 y-=1
                 x+=1
         self.allstop()
+
+    
+imu=IMU_Operations()
+motor=Motor_Operations()
+
+
+
+
+
+
+
+
+
+   
+    
+
+
+
+
+
+
+
+
 
 
     
