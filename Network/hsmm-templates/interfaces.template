@@ -1,0 +1,27 @@
+#
+# WARNING WARNING WARNING WARNING
+# This file is managed by HSMM-Pi.
+# Manual changes to this file WILL BE OVERWRITTEN
+#
+
+auto lo
+iface lo inet loopback
+    
+auto eth0
+iface eth0 inet dhcp
+
+auto {wifi_adapter_name}
+iface {wifi_adapter_name} inet {wifi_protocol}
+    address {wifi_ip_address}
+    netmask {wifi_netmask}
+    gateway 10.0.0.1
+    wireless-mode {wifi_mode}
+    wireless-channel {wifi_channel}
+    wireless-essid {wifi_ssid}
+
+iface default inet dhcp
+ 
+allow-hotplug {wired_adapter_name}
+iface {wired_adapter_name} inet static
+    address {lan_ip_address}
+    netmask {lan_netmask}
