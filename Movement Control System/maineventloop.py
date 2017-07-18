@@ -1,5 +1,8 @@
 from gps import * #imports "everything" from gps
 from Adafruit_BNO055 import BNO055
+import sys
+sys.path.append("/home/pi/MMNE/Network/NetworkUtils")
+from MeshNetworkUtil import *
 import motor_op
 import positioning_calc
 
@@ -14,6 +17,10 @@ bno = BNO055.BNO055(serial_port='/dev/ttyAMA0', rst=18)
 #start GPS session
 session = gps(mode=WATCH_ENABLE)
 
+#Init the listener util BEFORE
+#starting the main event loop
+commandReceiver = MeshNetworkUtil()
+commandReceiver.startListening()
 
 #loop variable initializations
 loops = 0
@@ -27,7 +34,10 @@ ismovingforward = False
 isturning = False
 isdestination = False
 isgetGPSorigin = False
-
+#set to true for networking commands
+isNetworkingEnabled = False
+packet = None
+hostAddress = getIP() #this client's IP address
 #calibrations for individual robot ***WRITE CALIBRATION FILE LATER
 isheadingoffset = True
 heading_offset = -90 #(degrees) offset to compensate for imu mounting direction and robot's front direction
@@ -53,10 +63,30 @@ while True:
     ########## MODIFY HERE #######
     #get destination info
     #currently console input (need to set up port)
-    if not isdestination and run_time > 5:
-        xdestination = float(raw_input('xcoord: '))
-        ydestination = float(raw_input('ycoord: '))
-        isdestination = True        
+    #Get potential packet from networkUtil
+    if isNetworkingEnabled:
+        packet = commandReceiver.getPacket()
+        #check if its a MeshPacket Object
+        if isinstance(packet, MeshPacket) and hostAddress == packet.address():
+            #check if its current command is completed
+            #if it is completed, then run the new command
+            #otherwise ignore it and keep going
+            if not isdestination and run_time > 5:
+                #timestamp will have the time th epacket is
+                #sent if needed later
+                timestamp = packet.timestamp()
+                coordinates = packet.getPayload()
+                #coordinates will be in the form of:
+                #1.234, 5.678 so we can split by ', '
+                coordList = coordinates.split(', ')
+                xdestination = float(coordList[0])
+                ydestination = float(coordList[1])
+                isdestination = True
+    else :
+        if not isdestination and run_time > 5:
+            xdestination = float(raw_input('xcoord: '))
+            ydestination = float(raw_input('ycoord: '))
+            isdestination = True        
     ##############################
 
 
@@ -104,6 +134,12 @@ while True:
         xcurrent, ycurrent = positioning_calc.xy_getpoint(gpsbearing_north, gpsdistance_origin)
         print("xycurrent",xcurrent, ycurrent)
 
+    #Networking stuff: sends data TO whomever sent the packet
+    if isNetworkingEnabled:
+        replyData = str(xcurrent) + ', ' + str(ycurrent) + ', ' + str(heading)
+        address = '10.0.0.2'
+        commandReceiver.sendPacket(replyData, address)
+        packet = None
     #heading test and correction information
     if isdestination:
         dist_togo = positioning_calc.distance_togo(xcurrent, ycurrent, xdestination, ydestination)
