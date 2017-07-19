@@ -33,7 +33,7 @@ class APListener(WorkerThread):
                                                  stdout=subprocess.PIPE,
                                                  stderr=subprocess.PIPE)
         
-                iwShell = subprocess.Popen(["iwconfig","wlan1"],
+                iwShell = subprocess.Popen(["iw","dev", "wlan1", "station", "dump"],
                                                 stdout=subprocess.PIPE,
                                                 stderr=subprocess.PIPE)
                 arpOut = arpShell.communicate()[0]
