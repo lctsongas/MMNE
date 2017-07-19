@@ -1,23 +1,27 @@
-sudo cp -f /home/pi/hsmm-pi/src/var/www/hsmm-pi/Controller/AppController.php /hsmm-pi/src/var/www/hsmm-pi/Controller/AppController.php
+#!/bin/bash
+#Add filename of hsmm-pi file you want to modify with your own file
+#Make sure the modified file matchesd the original filename AND
+#you add the file to the MMNE/
+MMNE_files=("AppController.php" 
+            "NetworkSettingsController.php")
 
-sudo cp -f /home/pi/hsmm-pi/src/var/www/hsmm-pi/Controller/NetworkSettingsController.php /hsmm-pi/src/var/www/hsmm-pi/Controller/NetworkSettingsController.php
+HSMM_HOME='/home/pi/hsmm-pi'
+MMNE_HOME='/home/pi/MMNE'
+for file in ${MMNE_files[@]}; do   # The quotes are necessary here
+  echo "replacing: $file"
+  path_str=$(find "$HSMM_HOME" -name $file)
+  IFS=$' ' read -rd '' -a path_list <<< $path_str
+  path=${path_list[0]}
+  path="${path%$'\n'}"
+  if ! [ -f "$path-original" ]; then
+    echo "Making backup of: $file"
+    cp -f $path "$path-original"
+  fi
+  cp -f "$MMNE_HOME/Network/hsmm-templates/$file" $path
+  echo "Modified $file added to hsmm-pi"
+done
+echo "Please connect to: 127.0.0.1:8080 in web browser"
+echo "login and go to admin->network then click save"
+echo "reboot device to apply changes"
 
-sudo cp -f /home/pi/hsmm-pi/src/var/www/hsmm-pi/Controller/NetworkServicesController.php /hsmm-pi/src/var/www/hsmm-pi/Controller/NetworkServicesController.php
-
-sudo cp -f /home/pi/hsmm-pi/src/var/www/hsmm-pi/Controller/LocationSettingsController.php /hsmm-pi/src/var/www/hsmm-pi/Controller/LocationSettingsController.php
-
-sudo cp -f /home/pi/hsmm-pi/src/var/www/hsmm-pi/Controller/PagesController.php /hsmm-pi/src/var/www/hsmm-pi/Controller/PagesController.php
-
-sudo cp -f /home/pi/hsmm-pi/src/var/www/hsmm-pi/Controller/StatusController.php /hsmm-pi/src/var/www/hsmm-pi/Controller/StatusController.php
-
-sudo cp -f /home/pi/hsmm-pi/src/var/www/hsmm-pi/Controller/SystemController.php /hsmm-pi/src/var/www/hsmm-pi/Controller/SystemController.php
-
-sudo cp -f /home/pi/hsmm-pi/src/var/www/hsmm-pi/Controller/UsersController.php /hsmm-pi/src/var/www/hsmm-pi/Controller/UsersController.php
-
-sudo cp -f /home/pi/hsmm-pi/src/var/www/hsmm-pi/Controller/WifiScanController.php /hsmm-pi/src/var/www/hsmm-pi/Controller/WifiScanController.php
-
-echo "Controllers copied"
-
-sudo cp -f /home/pi/hsmm-pi/src/var/www/hsmm-pi/webroot/files/network_interfaces/interfaces.template /hsmm-pi/src/var/www/hsmm-pi/webroot/files/network_interfaces/interfaces.template
-echo "Interface template copied"
-
+exit 0
