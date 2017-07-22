@@ -1,17 +1,17 @@
 import multiprocessing as mp
 from ProcessManager import MMNEProcess, ProcessManager
 import time
-def spam(myDouble, myList):
+def spam(myDouble, myList, spamQ):
     myList.append(myDouble)
-    return myList
+    spamQ.put(myList)
 
-def eggs():
+def eggs(eggsQ):
     time.sleep(5)
-    return 'I\'m done cooking eggs!'
+    eggsQ.put('I\'m done cooking eggs!')
 
-def bacon(myString):
+def bacon(myString, baconQ):
     x = len(myString)
-    return myString + ' is ' + str(x) + ' chars long!'
+    baconQ.put(myString + ' is ' + str(x) + ' chars long!')
 
 if __name__ == '__main__':
     #Create ProcessManager object
@@ -20,14 +20,23 @@ if __name__ == '__main__':
     spamID = 'SPAM'
     eggsID = 'EGGS'
     baconID = 'tasty'
+    spamOut=mp.Queue()
+    eggsOut=mp.Queue()
+    stringyOut=mp.Queue()
     #Start processes
     groceryList = ['milk', 'cheese', 'and for dessert:']
     #Create spam process
-    pManager.startProcess(spamID, spam, (3.14, groceryList))
+    pSpam = mp.Process(target=spam, args = (3.14, groceryList, spamOut))
+    pSpam.start()
+    #pManager.startProcess(spamID, spam, (3.14, groceryList), (spamOut,))
     #Create eggs process
-    pManager.startProcess(eggsID, eggs)
+    pEggs = mp.Process(target=eggs, args=(eggsOut,))
+    pEggs.start()
+    #pManager.startProcess(eggsID, eggs, (), (eggsOut,))
     #Create bacon process
-    pManager.startProcess(baconID, bacon, ('my stringy string',))
+    pBacon = mp.Process(target=bacon, args=('my stringy string',stringyOut))
+    pBacon.start()
+    #pManager.startProcess(baconID, bacon, ('my stringy string',), (stringyOut,))
     #While loop control vars
     spamResult = None
     eggsResult = None
@@ -41,7 +50,10 @@ if __name__ == '__main__':
             print 'Spam done! Returned: ' + str(spamResult)
             spamDone = True
         elif not spamDone:
-            spamResult = pManager.getResult(spamID)
+            try:
+                spamResult = spamOut.get(True, 0.1)
+            except Exception as e:
+                continue
             
         #Check if eggs is done
         if eggsResult != None and not eggsDone:
@@ -49,7 +61,10 @@ if __name__ == '__main__':
             print 'Eggs done! Returned: ' + str(eggsResult)
             eggsDone = True
         elif not eggsDone:
-            eggsResult = pManager.getResult(eggsID)
+            try:
+                eggsResult = eggsOut.get(True, 0.1)
+            except Exception as e:
+                continue
             
         #Check if bacon is done
         if baconResult != None and not baconDone:
@@ -57,8 +72,13 @@ if __name__ == '__main__':
             print 'Bacon done! Returned: ' + str(baconResult)
             baconDone = True
         elif not baconDone:
-            baconResult = pManager.getResult(baconID)
+            try:
+                baconResult = stringyOut.get(True, 0.1)
+            except Exception as e:
+                continue
+            #print pManager.getProcess(baconID).is_alive()
 
         print 'waiting...'
+        time.sleep(1)
 
 
