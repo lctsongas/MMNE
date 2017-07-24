@@ -3,18 +3,19 @@ import sys
 import time
 import math
 import atexit
-from threading import Thread
-import numpy as np
-from Queue import Queue
 
 
 
 
 
 
+
+#libraries for IMU
 from Adafruit_BNO055 import BNO055
+#libraries for MOTORS
 from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
-
+#libraries for GPS
+import gps
 
 
 
