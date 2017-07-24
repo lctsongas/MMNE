@@ -108,31 +108,49 @@ else
   cd $HSMM_Path
   git clone https://github.com/urlgrey/hsmm-pi.git
   cd "$HSMM_Path/hsmm-pi"
-  sh install.sh
+  sudo runuser -l pi -c "$HSMM_Path/hsmm-pi/install.sh"
 fi
 echo "[GIT] HSMM-Pi Done!"
 
+#All git files downloaded successfully
 
-#hsmm-pi installation block
-#mkdir "$
-#cd "$PKG_HOME/Downloads"
-#sudo git clone https://github.com/urlgrey/hsmm-pi.git
-#cd hsmm-pi
-#sh ./install.sh
-#hsmmOK=$?; 
-#if [[ $hsmmOK != 0 ]]; then 
-#  echo "[install_pkg] hsmm-pi failed to install"
-#  exit $hsmmOK; 
-#fi
-#echo "[install_pkg] hsmm-pi installed successfully"
-#
-##Copy MMNE modified config files to hsmm-pi
-#cd $PKG_HOME/MMNE/Network/Config
-#sudo sh ./copyMMNEtoHSMM
-#copyOK=$?; 
-#if [[ $copyOK != 0 ]]; then 
-#  echo "[install_pkg] copying failed"
-#  exit $copyOK; 
-#fi
-#echo "[install_pkg] network config files copied successfully"
+echo "[GET] GPS"
+sudo apt-get install gpsd gpsd-clients python-gps
+sudo systemctl stop gpsd.socket
+sudo systemctl disable gpsd.socket
+sudo gpsd /dev/ttyUSB0 -F /var/run/gpsd.sock
+echo "[GET] GPS Done!"
+
+echo "[GET] Hostapd"
+sudo apt-get install hostapd
+echo "[GET] Hostapd done!"
+
+#Begin setting up UART and stopping bluetooth
+echo "[BOOT] Modifying boot files"
+bootcfg="/boot/config.txt"
+echo "enable_uart=1" >> $bootcfg
+echo "dtoverlay=pi3-miniuart-bt" >> $bootcfg
+sudo systemctl stop serial-getty@ttyS0.service
+sudo systemctl disable serial-getty@ttyS0.service
+bootcmd=$(cat /boot/cmdline.txt)
+echo "${go#[^\s]*serial0[^\s]*}" > $bootcmd
+echo "[BOOT] boot files Done!"
+
+#Begin setting up network now
+echo "[NET] Setting up Network"
+NETCFG_PATH="$PKG_HOME/MMNE/Network/Config"
+/bin/bash "$NETCFG_PATH/hsmm-pi_copier.sh"
+/bin/bash "$NETCFG_PATH/create_AP_IP.sh"
+
+sudo cp "$NETCFG_PATH/hostapd.conf" "/etc/hostapd/"
+sudo mv "/usr/sbin/hostapd" "/usr/sbin/hostapd.bak"
+sudo cp "$NETCFG_PATH/hostapd" "/usr/sbin/"
+sudo chown root /usr/sbin/hostapd
+sudo chmod 775 /usr/sbin/hostapd
+
+echo "[NET] Network Setup Done!"
+
+echo "Reboot the RPi for changes to take effect"
+
+
 
