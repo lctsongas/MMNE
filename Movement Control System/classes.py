@@ -52,19 +52,18 @@ class IMU_Operations(object):
         
 
     def heading_euler_p(self):
-	self.heading,self.roll,self.pitch=self.bno.read_euler()
-	return(self.heading)
-            #time.sleep(1)
+        while True:
+            self.heading,self.roll,self.pitch=self.bno.read_euler()
+            print(self.heading)
+            time.sleep(1)
 
     def accel_data(self):
-            
-                x,y,z = self.bno.read_accelerometer()
-                print(x,y,z)
+        x,y,z = self.bno.read_accelerometer()
+        return(x,y,z)
                 
     def lin_accel_data(self):
-        while True:
-            x, y, z = self.bno.read_linear_acceleration()
-            return(x,y)
+        x, y, z = self.bno.read_linear_acceleration()
+        return(x,y,z)
 
     # save the accel data s:runtime r: point every r second
 
