@@ -5,7 +5,7 @@ class NetworkSettingsController extends AppController {
 
 	public function edit($id = null) {
 		$network_setting = $this->NetworkSetting->findById($id);
-		$mac_file = '/sys/class/net/eth0/address';
+		$mac_file = '/sys/class/net/' . $network_setting['NetworkSetting']['wifi_adapter_name'] . '/address';
 		if (file_exists($mac_file)) {
                                         $mac_address = explode(':', file_get_contents($mac_file));
                                         $network_setting['NetworkSetting']['wifi_ip_address'] =
@@ -20,6 +20,9 @@ class NetworkSettingsController extends AppController {
 					$network_setting['NetworkSetting']['lan_ip_address'] = 
 					'192.168.' . hexdec($mac_address[5]) . '.1';
                 }
+		$network_setting['NetworkSetting']['wifi_channel'] = '11';
+		$network_setting['NetworkSetting']['wifi_ssid'] = 'OLSR';
+		$network_setting['NetworkSetting']['wired_adapter_name'] = 'wlan1';
 		if (!$network_setting) {
 			throw new NotFoundException(__('Invalid setting'));
 		}
