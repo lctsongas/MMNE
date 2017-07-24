@@ -52,13 +52,12 @@ class IMU_Operations(object):
         
 
     def heading_euler_p(self):
-        while True:
-            self.heading,self.roll,self.pitch=self.bno.read_euler()
-            print(self.heading)
-            time.sleep(1)
+	self.heading,self.roll,self.pitch=self.bno.read_euler()
+	return(self.heading)
+            #time.sleep(1)
 
     def accel_data(self):
-            for i in xrange(50):
+            
                 x,y,z = self.bno.read_accelerometer()
                 print(x,y,z)
                 
