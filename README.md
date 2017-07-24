@@ -8,4 +8,6 @@ git clone https://github.com/lctsongas/MMNE.git
 
 cd MMNE/
 
+sudo chmod +x install_packages.sh
+
 sudo ./install_packages.sh
