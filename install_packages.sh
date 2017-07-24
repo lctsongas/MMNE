@@ -2,7 +2,7 @@
 #This will intall all necessary packages for the MMNE project
 
 if [ "$(id -u)" != "0" ]
-  then echo "Please run as root, HTTP interface will not work"
+  then echo "Please run as root,"
   exit 1
 fi
 
