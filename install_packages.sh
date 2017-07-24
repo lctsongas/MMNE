@@ -148,6 +148,8 @@ sudo cp "$NETCFG_PATH/hostapd" "/usr/sbin/"
 sudo chown root /usr/sbin/hostapd
 sudo chmod 775 /usr/sbin/hostapd
 
+sudo cp "$NETCFG_PATH/dhcpcd.conf" "/etc/dhcpcd.conf"
+
 echo "[NET] Network Setup Done!"
 
 echo "Reboot the RPi for changes to take effect"
