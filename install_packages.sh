@@ -132,7 +132,7 @@ else
   AP_Cmd="git clone https://github.com/pvaret/rtl8192cu-fixes.git"
   echo "[GIT] $AP_Cmd"
   eval $AP_Cmd
-  cd "$AP_Path/AP"
+  cd "$AP_Path/rtl8192cu-fixes"
   sudo dkms add .
   sudo dkms install 8192cu/1.10
   sudo depmod -a
