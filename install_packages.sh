@@ -179,8 +179,21 @@ sudo chmod 775 /usr/sbin/hostapd
 sudo cp "$NETCFG_PATH/dhcpcd.conf" "/etc/dhcpcd.conf"
 
 echo "[NET] Network Setup Done!"
-
+echo "#########################################"
 echo "Reboot the RPi for changes to take effect"
+echo "IMPORTANT:"
+echo "In order to get the mesh running do the\n
+following steps:\n
+1) Open up your browser\n
+2) Enter: 127.0.0.1:8080 in the URL bar\n
+3) Click login on the top right\n
+4) Use the following credentials:\n
+\tUsername: admin\n
+\tPassword: changeme\n
+5) Click Admin->Network at the top of the page\n
+6) DO NOT CHNANGE ANYTHING\n
+7) Click 'Save Network Settings'\n
+8) Once it says it saved successfully, reboot the Pi\n"
 
 
 
