@@ -115,12 +115,6 @@ class MeshNetworkUtil:
         for key in self.clientPorts:
             print '  ' + key + ' : '  + str(self.clientPorts[key])
             
-    def getIP(ifname='wlan0'):
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    return socket.inet_ntoa(fcntl.ioctl(
-        s.fileno(),
-        0x8915,  # SIOCGIFADDR
-        struct.pack('256s', ifname[:15]))[20:24])
 
     def toggleDebug(self):
         self.debug = not self.debug

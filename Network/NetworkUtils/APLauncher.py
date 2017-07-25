@@ -5,7 +5,7 @@ from ThreadManager import ThreadManager
 from APListener import APListener
 import subprocess
 from Queue import Queue
-from time import sleep
+import time
 
 if __name__ == '__main__':
     queueIn = Queue()
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     threadMgr.startThread(ListenerID)
 
     while True:
-        sleep(1)
+        time.sleep(1)
         iwData, arpData = threadMgr.getFrom(ListenerID)
         print 'iw Data: '
         print iwData
