@@ -23,6 +23,8 @@ class NetworkSettingsController extends AppController {
 		$network_setting['NetworkSetting']['wifi_channel'] = '11';
 		$network_setting['NetworkSetting']['wifi_ssid'] = 'OLSR';
 		$network_setting['NetworkSetting']['wired_adapter_name'] = 'wlan1';
+		$network_setting['NetworkSetting']['{lan_dhcp_start}'] = '20';
+		$network_setting['NetworkSetting']['{lan_dhcp_end}'] = '220';
 		if (!$network_setting) {
 			throw new NotFoundException(__('Invalid setting'));
 		}
