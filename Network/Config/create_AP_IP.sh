@@ -24,16 +24,16 @@ sudo ifconfig wlan1 $addrIP netmask 255.255.$decimal.0
 sudo ifconfig wlan1 up
 templatePath="/home/pi/hsmm-pi/src/var/www/hsmm-pi/webroot/files/network_interfaces/interfaces.template"
 
-if sudo grep "allow-hotplug {wired_adapter_name}" $templatePath; then
-  echo "wlan1 already configured"
-else 
-  echo " " >> $templatePath
-  echo "allow-hotplug {wired_adapter_name}" >> $templatePath
-  echo "iface {wired_adapter_name} inet static" >> $templatePath
-  echo "    address $addrIP" >> $templatePath
-  echo "    netmask 255.255.255.0" >> $templatePath
-  echo "    network 192.168.$decimal.0" >> $templatePath
-fi
+#if sudo grep "allow-hotplug {wired_adapter_name}" $templatePath; then
+#  echo "wlan1 already configured"
+#else 
+#  echo " " >> $templatePath
+#  echo "allow-hotplug {wired_adapter_name}" >> $templatePath
+#  echo "iface {wired_adapter_name} inet static" >> $templatePath
+#  echo "    address $addrIP" >> $templatePath
+#  echo "    netmask 255.255.255.0" >> $templatePath
+#  echo "    network 192.168.$decimal.0" >> $templatePath
+#fi
 
 sudo service dhcpcd stop
 sudo service hostapd stop
@@ -43,9 +43,9 @@ sudo ifdown wlan1
 #Save original DHCP server config and make new one for AP
 sudo cp /etc/dnsmasq.conf /etc/dnsmasq.conf.original
 
-dhcpPath="/etc/dnsmasq.conf"
-echo "interface=wlan1" > $dhcpPath
-echo "dhcp-range=192.168.$decimal.20,192.168.$decimal.220,255.255.255.0,24h" >> $dhcpPath
+#dhcpPath="/etc/dnsmasq.conf"
+#echo "interface=wlan1" > $dhcpPath
+#echo "dhcp-range=192.168.$decimal.20,192.168.$decimal.220,255.255.255.0,24h" >> $dhcpPath
 
 #Setup hostapd.conf
 hostapdPath="/etc/hostapd/hostapd.conf"
@@ -69,16 +69,16 @@ sudo sed -i '/#DAEMON_CONF/c\DAEMON_CONF=/etc/hostapd/hostapd.conf' /etc/default
 #Setup hsmm-pi.conf
 
 dnsConfPath="/home/pi/hsmm-pi/src/var/www/hsmm-pi/webroot/files/dnsmasq/hsmm-pi.conf.template"
-sudo sed -i "/dhcp-option=3,{lan_ip_address}/c\dhcp-option=3,$addrIP" $dnsConfPath
+#sudo sed -i "/dhcp-option=3,{lan_ip_address}/c\dhcp-option=3,$addrIP" $dnsConfPath
 
-sudo sed -i "s/{lan_dhcp_start}/192.168.$decimal.10/" $dnsConfPath
+#sudo sed -i "s/{lan_dhcp_start}/192.168.$decimal.10/" $dnsConfPath
 
-sudo sed -i "s/{lan_dhcp_end}/192.168.$decimal.240/" $dnsConfPath
+#sudo sed -i "s/{lan_dhcp_end}/192.168.$decimal.240/" $dnsConfPath
 
-sudo sed -i "s/{lan_netmask},24h/255.255.255.0,24h/" $dnsConfPath
+#sudo sed -i "s/{lan_netmask},24h/255.255.255.0,24h/" $dnsConfPath
 
 
-sudo sed -i "s/{lan_ip_address}/$addrIP/" $dnsConfPath
+#sudo sed -i "s/{lan_ip_address}/$addrIP/" $dnsConfPath
 
 sudo ifup wlan1
 sudo service dhcpcd start
