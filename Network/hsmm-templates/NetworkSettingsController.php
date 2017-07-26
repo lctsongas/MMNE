@@ -5,7 +5,7 @@ class NetworkSettingsController extends AppController {
 
 	public function edit($id = null) {
 		$network_setting = $this->NetworkSetting->findById($id);
-		$mac_file = '/sys/class/net/' . $network_setting['NetworkSetting']['wifi_adapter_name'] . '/address';
+		$mac_file = '/sys/class/net/eth0/address';
 		if (file_exists($mac_file)) {
                                         $mac_address = explode(':', file_get_contents($mac_file));
                                         $network_setting['NetworkSetting']['wifi_ip_address'] =
@@ -55,7 +55,7 @@ class NetworkSettingsController extends AppController {
 			// perform some checks in the case of an HTTP GET
 			if ($network_setting['NetworkSetting']['wifi_ip_address'] == NULL) {
 				// if no WIFI IP is set, then use one derived from the adapter MAC address
-				$mac_file = '/sys/class/net/' . $network_setting['NetworkSetting']['wifi_adapter_name'] . '/address';
+				$mac_file = '/sys/class/net/eth0/address';
 				if (file_exists($mac_file)) {
 					$mac_address = explode(':', file_get_contents($mac_file));
 					$network_setting['NetworkSetting']['wifi_ip_address'] =
@@ -108,7 +108,7 @@ class NetworkSettingsController extends AppController {
 		} else {
 			$wired_mode_block = "dhcp";
 		}
-		$mac_file = '/sys/class/net/' . $network_setting['NetworkSetting']['wifi_adapter_name'] . '/address';
+		$mac_file = '/sys/class/net/eth0/address';
 		if (file_exists($mac_file)) {
                                         $mac_address = explode(':', file_get_contents($mac_file));
                                         $network_setting['NetworkSetting']['wifi_ip_address'] =
