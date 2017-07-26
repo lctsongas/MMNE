@@ -53,8 +53,6 @@ if ask "Update and upgrade RPi?" ; then
   sleep 2
   sudo apt-get update
   sudo apt-get upgrade
-  sudo apt-get install -y linux-headers-4.9.0-2-all build-essential dkms
-  sudo ln -s /lib/modules/4.9.0-2-rpi/* /lib/modules/4.9.35-v7+/
 fi
 
 sudo apt-get install -y git
@@ -69,9 +67,7 @@ if ! [ $? -eq 0 ]; then
   echo "IMU repo already exists!"
 else
   cd $IMU_Path
-  IMU_Cmd="git clone https://github.com/adafruit/Adafruit_Python_BNO055.git"
-  echo "[GIT] $IMU_Cmd"
-  eval $IMU_Cmd
+  git clone https://github.com/adafruit/Adafruit_Python_BNO055.git
   cd "$IMU_Path/Adafruit_Python_BNO055"
   sudo python setup.py install
 fi
@@ -84,9 +80,7 @@ if ! [ $? -eq 0 ]; then
   echo "ADC repo already exists!"
 else
   cd $ADC_Path
-  ADC_Cmd="git clone https://github.com/adafruit/Adafruit_Python_ADS1x15.git"
-  echo "[GIT] $ADC_Cmd"
-  eval $ADC_Cmd
+  git clone https://github.com/adafruit/Adafruit_Python_ADS1x15.git
   cd "$ADC_Path/Adafruit_Python_ADS1x15"
   sudo python setup.py install
 fi
@@ -99,9 +93,7 @@ if ! [ $? -eq 0 ]; then
   echo "Motor HAT repo already exists!"
 else
   cd $MHAT_Path
-  MHAT_Cmd="git clone https://github.com/adafruit/Adafruit-Motor-HAT-Python-Library.git"
-  echo "[GIT] $MHAT_Cmd"
-  eval $MHAT_Cmd
+  git clone https://github.com/adafruit/Adafruit-Motor-HAT-Python-Library.git
   cd "$MHAT_Path/Adafruit-Motor-HAT-Python-Library"
   sudo python setup.py install
 fi
@@ -114,44 +106,24 @@ if ! [ $? -eq 0 ]; then
   echo "HSMM-Pi repo already exists!"
 else
   cd $HSMM_Path
-  HSMM_Cmd="git clone https://github.com/urlgrey/hsmm-pi.git"
-  echo "[GIT] $HSMM_Cmd"
-  eval $HSMM_Cmd
+  git clone https://github.com/urlgrey/hsmm-pi.git
   cd "$HSMM_Path/hsmm-pi"
   sudo runuser -l pi -c "$HSMM_Path/hsmm-pi/install.sh"
-fi
-echo "[GIT] HSMM-Pi Done!"
-
-echo "[GIT] AP (rtl8192cu) Driver"
-AP_Path="$GIT_HOME/AP"
-mkdir $AP_Path
-if ! [ $? -eq 0 ]; then
-  echo "AP repo already exists!"
-else
-  cd $AP_Path
-  AP_Cmd="git clone https://github.com/pvaret/rtl8192cu-fixes.git"
-  echo "[GIT] $AP_Cmd"
-  eval $AP_Cmd
-  cd "$AP_Path/rtl8192cu-fixes"
-  sudo dkms add .
-  sudo dkms install 8192cu/1.10
-  sudo depmod -a
 fi
 echo "[GIT] HSMM-Pi Done!"
 
 #All git files downloaded successfully
 
 echo "[GET] GPS"
-sudo apt-get install -y gpsd gpsd-clients python-gps
+sudo apt-get install gpsd gpsd-clients python-gps
 sudo systemctl stop gpsd.socket
 sudo systemctl disable gpsd.socket
 sudo gpsd /dev/ttyUSB0 -F /var/run/gpsd.sock
 echo "[GET] GPS Done!"
 
 echo "[GET] Hostapd"
-sudo apt-get install -y hostapd
+sudo apt-get install hostapd
 echo "[GET] Hostapd done!"
-
 
 #Begin setting up UART and stopping bluetooth
 echo "[BOOT] Modifying boot files"
@@ -170,30 +142,17 @@ NETCFG_PATH="$PKG_HOME/MMNE/Network/Config"
 /bin/bash "$NETCFG_PATH/hsmm-pi_copier.sh"
 /bin/bash "$NETCFG_PATH/create_AP_IP.sh"
 
-sudo cp "$NETCFG_PATH/hostapd.conf" "/etc/hostapd/"
-sudo mv "/usr/sbin/hostapd" "/usr/sbin/hostapd.bak"
-sudo cp "$NETCFG_PATH/hostapd" "/usr/sbin/"
-sudo chown root /usr/sbin/hostapd
-sudo chmod 775 /usr/sbin/hostapd
+#sudo cp "$NETCFG_PATH/hostapd.conf" "/etc/hostapd/"
+#sudo mv "/usr/sbin/hostapd" "/usr/sbin/hostapd.bak"
+#sudo cp "$NETCFG_PATH/hostapd" "/usr/sbin/"
+#sudo chown root /usr/sbin/hostapd
+#sudo chmod 775 /usr/sbin/hostapd
 
 sudo cp "$NETCFG_PATH/dhcpcd.conf" "/etc/dhcpcd.conf"
 
 echo "[NET] Network Setup Done!"
-echo "#########################################"
+
 echo "Reboot the RPi for changes to take effect"
-echo "IMPORTANT:"
-echo "In order to get the mesh running do the\n
-following steps:\n
-1) Open up your browser\n
-2) Enter: 127.0.0.1:8080 in the URL bar\n
-3) Click login on the top right\n
-4) Use the following credentials:\n
-\tUsername: admin\n
-\tPassword: changeme\n
-5) Click Admin->Network at the top of the page\n
-6) DO NOT CHNANGE ANYTHING\n
-7) Click 'Save Network Settings'\n
-8) Once it says it saved successfully, reboot the Pi\n"
 
 
 
