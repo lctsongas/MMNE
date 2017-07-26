@@ -132,8 +132,7 @@ echo "enable_uart=1" >> $bootcfg
 echo "dtoverlay=pi3-miniuart-bt" >> $bootcfg
 sudo systemctl stop serial-getty@ttyS0.service
 sudo systemctl disable serial-getty@ttyS0.service
-bootcmd=$(cat /boot/cmdline.txt)
-echo "${go#[^\s]*serial0[^\s]*}" > $bootcmd
+echo "dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet splash plymouth.ignore-serial-consoles" > $bootcmd
 echo "[BOOT] boot files Done!"
 
 #Begin setting up network now
