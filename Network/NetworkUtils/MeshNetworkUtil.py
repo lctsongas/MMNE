@@ -2,6 +2,7 @@ import socket, threading, sys
 import traceback, os, math
 from time import time
 from Queue import Queue
+import subprocess
 
 class MeshNetworkUtil:
     HOST = ''   # Listen to all 
@@ -122,7 +123,7 @@ class MeshNetworkUtil:
         
 
 
-HEADER_SIZE = 16
+HEADER_SIZE = 20
 
 class MeshPacket:   
     header = bytearray(HEADER_SIZE)
@@ -137,34 +138,49 @@ class MeshPacket:
         #########HEADER FORMAT###############
         #0          1          2          3 #
         #01234567 89012345 67890123 45678901#
+        #            Src IP Address         #
         #           Dest. IP Address        #
         #MsgType #   Padding       #  Flags #
         #             Timestamp             #
         #    DataLen      #    Padding      #
         #####################################
-        ip1,ip2,ip3,ip4 = destIP.split('.')
-        header[0] = int(ip1)
-        header[1] = int(ip2)
-        header[2] = int(ip3)
-        header[3] = int(ip4)
+        dIP1,dIP2,dIP3,dIP4 = destIP.split('.')
+        try:
+            
+            macShell = subprocess.check_output(["cat","/sys/class/net/eth0/address"])
+            macBytes = macShell.split(':')
+            header[0] = 10
+            header[1] = int(macBytes[3],16)
+            header[2] = int(macBytes[4],16)
+            header[3] = int(macBytes[5],16)
+        except Exception as e:
+            header[0] = 10
+            header[1] = 0
+            header[2] = 0
+            header[3] = 2
+        
+        header[4] = int(dIP1)
+        header[5] = int(dIP2)
+        header[6] = int(dIP3)
+        header[7] = int(dIP4)
 
-        header[4] = msgType
+        header[8] = msgType
         
-        header[5] = 0
-        header[6] = 0
+        header[9] = 0
+        header[10] = 0
         
-        header[7] = flags
+        header[11] = flags
         
-        header[8] = ((timestamp >> 24) & 255)
-        header[9] = ((timestamp >> 16) & 255)
-        header[10] = ((timestamp >> 8) & 255)
-        header[11] = (timestamp & 255)
+        header[12] = ((timestamp >> 24) & 255)
+        header[13] = ((timestamp >> 16) & 255)
+        header[14] = ((timestamp >> 8) & 255)
+        header[15] = (timestamp & 255)
 
-        header[12] = ((len(payload) >> 8) & 255)
-        header[13] = (len(payload) & 255)
+        header[16] = ((len(payload) >> 8) & 255)
+        header[17] = (len(payload) & 255)
         
-        header[14] = 0
-        header[15] = 0
+        header[18] = 0
+        header[19] = 0
         
         self.header = header
         self.payload = payload
@@ -173,9 +189,8 @@ class MeshPacket:
         """Decode the UDP packet."""
         self.header = bytearray(byteStream[:HEADER_SIZE])
         self.payload = byteStream[HEADER_SIZE:]
-    
-    def address(self):
-        """Return UDP dest. address."""
+    def srcAddress(self):
+        """Return who sent the packet"""
         ipAddr = ''
         ipAddr += str(self.header[0])
         ipAddr += "."
@@ -186,29 +201,35 @@ class MeshPacket:
         ipAddr += str(self.header[3])
         return ipAddr
     
+    def address(self):
+        """Return UDP dest. address."""
+        ipAddr = ''
+        ipAddr += str(self.header[4])
+        ipAddr += "."
+        ipAddr += str(self.header[5])
+        ipAddr += "."
+        ipAddr += str(self.header[6])
+        ipAddr += "."
+        ipAddr += str(self.header[7])
+        return ipAddr
+    
     def messageType(self):
         """Return UDP type"""
         #msgType == 1 : Generic UDP Packet
-        return int(self.header[4])
+        return int(self.header[8])
 
     def flags(self):
         """Return UDP flags"""
-        return int(self.header[7])
+        return int(self.header[11])
 
     def payloadLength(self):
         """Return payload size (in bytes)"""
-        return (self.header[12] << 8) | self.header[13]
+        return (self.header[16] << 8) | self.header[17]
     
     def timestamp(self):
         """Return timestamp."""
-        timestamp = self.header[8] << 24 | self.header[9] << 16 | self.header[10] << 8 | self.header[11]
+        timestamp = self.header[12] << 24 | self.header[13] << 16 | self.header[14] << 8 | self.header[15]
         return int(timestamp)
-    
-    def payloadLength(self):
-        """Return payload type."""
-        dataLen = int((self.header[12] << 8))
-        dataLen |= int(self.header[13])
-        return dataLen
     
     def getPayload(self):
         """Return payload."""

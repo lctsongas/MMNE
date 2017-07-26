@@ -34,6 +34,7 @@ def getPacketFromServer():
         return None
     print '  Packet from server: '
     print '  Destination IP: ' + packetOut.address()
+    print '  Source IP: ' + packetOut.srcAddress()
     print '  Message Type: ' + str(packetOut.messageType())
     print '  Flags: ' + str(packetOut.flags())
     print '  Timestamp: ' + datetime.datetime.fromtimestamp(packetOut.timestamp()).strftime('%Y-%m-%d %H:%M:%S')
