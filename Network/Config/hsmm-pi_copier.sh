@@ -3,7 +3,10 @@
 #Make sure the modified file matchesd the original filename AND
 #you add the file to the MMNE/
 MMNE_files=("AppController.php" 
-            "NetworkSettingsController.php")
+            "NetworkSettingsController.php"
+            "interfaces.template"
+            "olsrd.conf.template"
+            "hsmm-pi.conf.template")
 
 HSMM_HOME='/home/pi/hsmm-pi'
 MMNE_HOME='/home/pi/MMNE'
