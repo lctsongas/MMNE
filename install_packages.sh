@@ -43,7 +43,7 @@ ask() {
 }
 
 PKG_HOME="/home/pi"
-GIT_HOME="/home/pi/Downloads/github"
+GIT_HOME="/home/pi"
 mkdir $GIT_HOME
 echo "Make sure you have internet connection before running!"
 echo "This step will take a long time. But is highly recommended"
@@ -61,55 +61,38 @@ echo "Installing github dependencies:"
 cd $GIT_HOME
 
 echo "[GIT] IMU Sensor"
-IMU_Path="$GIT_HOME/IMU"
-mkdir $IMU_Path
-if ! [ $? -eq 0 ]; then
-  echo "IMU repo already exists!"
-else
-  cd $IMU_Path
-  git clone https://github.com/adafruit/Adafruit_Python_BNO055.git
-  cd "$IMU_Path/Adafruit_Python_BNO055"
-  sudo python setup.py install
-fi
+IMU_Path="$GIT_HOME"
+
+cd $IMU_Path
+git clone https://github.com/adafruit/Adafruit_Python_BNO055.git
+cd "$IMU_Path/Adafruit_Python_BNO055"
+sudo python setup.py install
 echo "[GIT] IMU Sensor Done!"
 
 echo "[GIT] ADC Sensor"
-ADC_Path="$GIT_HOME/ADC"
-mkdir $ADC_Path
-if ! [ $? -eq 0 ]; then
-  echo "ADC repo already exists!"
-else
-  cd $ADC_Path
-  git clone https://github.com/adafruit/Adafruit_Python_ADS1x15.git
-  cd "$ADC_Path/Adafruit_Python_ADS1x15"
-  sudo python setup.py install
-fi
+ADC_Path="$GIT_HOME"
+cd $ADC_Path
+git clone https://github.com/adafruit/Adafruit_Python_ADS1x15.git
+cd "$ADC_Path/Adafruit_Python_ADS1x15"
+sudo python setup.py install
+
 echo "[GIT] ADC Sensor Done!"
 
 echo "[GIT] Motor HAT"
 MHAT_Path="$GIT_HOME/Motor_HAT"
-mkdir $MHAT_Path
-if ! [ $? -eq 0 ]; then
-  echo "Motor HAT repo already exists!"
-else
-  cd $MHAT_Path
-  git clone https://github.com/adafruit/Adafruit-Motor-HAT-Python-Library.git
-  cd "$MHAT_Path/Adafruit-Motor-HAT-Python-Library"
-  sudo python setup.py install
-fi
+cd $MHAT_Path
+git clone https://github.com/adafruit/Adafruit-Motor-HAT-Python-Library.git
+cd "$MHAT_Path/Adafruit-Motor-HAT-Python-Library"
+sudo python setup.py install
 echo "[GIT] Motor HAT Done!"
 
 echo "[GIT] HSMM-Pi"
-HSMM_Path="$GIT_HOME/HSMM-Pi"
+HSMM_Path="$GIT_HOME"
 mkdir $HSMM_Path
-if ! [ $? -eq 0 ]; then
-  echo "HSMM-Pi repo already exists!"
-else
-  cd $HSMM_Path
-  git clone https://github.com/urlgrey/hsmm-pi.git
-  cd "$HSMM_Path/hsmm-pi"
-  sudo runuser -l pi -c "$HSMM_Path/hsmm-pi/install.sh"
-fi
+cd $HSMM_Path
+git clone https://github.com/urlgrey/hsmm-pi.git
+cd "$HSMM_Path/hsmm-pi"
+sudo runuser -l pi -c "$HSMM_Path/hsmm-pi/install.sh"
 echo "[GIT] HSMM-Pi Done!"
 
 #All git files downloaded successfully
@@ -132,6 +115,7 @@ echo "enable_uart=1" >> $bootcfg
 echo "dtoverlay=pi3-miniuart-bt" >> $bootcfg
 sudo systemctl stop serial-getty@ttyS0.service
 sudo systemctl disable serial-getty@ttyS0.service
+bootcmd="/boot/cmdline.txt"
 echo "dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet splash plymouth.ignore-serial-consoles" > $bootcmd
 echo "[BOOT] boot files Done!"
 
@@ -161,7 +145,7 @@ following steps:
   3) Click login on the top right
   4) Use the following credentials:
 	Username: admin
-	Password: changeme
+	Password: changeme (or Password1 if using our image file)
   5) Click Admin->Network at the top of the page
   6) DO NOT CHNANGE ANYTHING
   7) Click 'Save Network Settings'
