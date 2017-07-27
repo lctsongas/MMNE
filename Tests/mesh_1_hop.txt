@@ -1,0 +1,4 @@
+traceroute 10.48.5.252
+traceroute to 10.48.5.252 (10.48.5.252), 30 hops max, 60 byte packets
+ 1  RPi_Node138.local.mesh (10.174.231.214)  9.365 ms  13.483 ms  14.200 ms
+ 2  RPi_Node169.local.mesh (10.48.5.252)  20.766 ms  20.917 ms  20.975 ms
