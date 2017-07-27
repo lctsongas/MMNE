@@ -48,7 +48,7 @@ class IMU_Operations(object):
  
     def heading_euler(self):
         self.heading,self.roll,self.pitch=self.bno.read_euler()
-        print(self.heading)
+        return self.heading
         
 
     def heading_euler_p(self):
@@ -241,11 +241,7 @@ class Motor_Operations(object):
 
 
     
-imu=IMU_Operations()
-motor=Motor_Operations()
-alist = myList()
-vlist = myList()
-dlist = myList()
+
 
 
 
