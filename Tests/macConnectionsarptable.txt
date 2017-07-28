@@ -1,0 +1,32 @@
+arp Data: 
+Adams-Air.local.mesh (192.168.225.164) at <incomplete> on wlan1
+Windows-Phone.local.mesh (192.168.225.202) at e4:98:d1:e3:de:d4 [ether] on wlan1
+android-d511329097bd0b2c.local.mesh (192.168.225.233) at 00:ae:fa:3e:29:11 [ether] on wlan1
+BracketrCreekMS.local.mesh (192.168.225.190) at 78:fd:94:76:c9:71 [ether] on wlan1
+? (192.168.225.93) at 1c:99:4c:1a:8b:74 [ether] on wlan1
+android-305fb79fc57e4d6a.local.mesh (192.168.225.230) at <incomplete> on wlan1
+? (10.180.65.249) at <incomplete> on wlan0
+Carine.local.mesh (192.168.225.89) at 60:45:bd:91:12:1a [ether] on wlan1
+android-dac82c84ed9ad6e8.local.mesh (192.168.225.232) at c0:bd:d1:ca:c9:6f [ether] on wlan1
+? (10.180.15.160) at <incomplete> on wlan0
+TABLET-MSCV7JDV.local.mesh (192.168.225.92) at 5c:e0:c5:71:42:ba [ether] on wlan1
+android-a19f33591606cc24.local.mesh (192.168.225.123) at <incomplete> on wlan1
+android-42b7f988280d3db8.local.mesh (192.168.225.163) at c0:ee:fb:5a:f0:02 [ether] on wlan1
+? (10.182.70.107) at <incomplete> on wlan0
+DESKTOP-GK0APNA.local.mesh (192.168.225.168) at 80:a5:89:02:11:53 [ether] on wlan1
+? (192.168.225.198) at b8:27:eb:51:81:f1 [ether] on wlan1
+amazon-b12219349.local.mesh (192.168.225.68) at ac:63:be:c3:6c:a0 [ether] on wlan1
+Ryans-Brick.local.mesh (192.168.225.99) at 30:10:e4:52:37:56 [ether] on wlan1
+Carines-iPhone.local.mesh (192.168.225.91) at 88:6b:6e:06:ee:82 [ether] on wlan1
+? (192.168.225.24) at 84:d6:d0:4e:67:5f [ether] on wlan1
+? (192.168.225.194) at b8:27:eb:77:19:4a [ether] on wlan1
+Ryan-Laptop.local.mesh (192.168.225.85) at 38:b1:db:dd:5f:f7 [ether] on wlan1
+? (192.168.225.112) at b8:27:eb:37:36:5f [ether] on wlan1
+raspberrypi.local.mesh (192.168.225.104) at b8:27:eb:b8:f3:ab [ether] on wlan1
+Adams-iPhone.local.mesh (192.168.225.131) at 7c:01:91:9d:37:51 [ether] on wlan1
+? (192.168.225.214) at b8:27:eb:ed:a3:9a [ether] on wlan1
+lta0227062c.local.mesh (192.168.225.84) at 34:f3:9a:96:37:28 [ether] on wlan1
+? (10.0.0.1) at 20:0c:c8:01:c5:37 [ether] on wlan0
+AdamStrtsiPhone.local.mesh (192.168.225.61) at 18:af:61:bd:71:cd [ether] on wlan1
+iPhone.local.mesh (192.168.225.76) at 68:d9:3c:30:dc:83 [ether] on wlan1
+android-89f26064634b1309.local.mesh (192.168.225.118) at ec:1f:72:7b:01:2b [ether] on wlan1
