@@ -152,7 +152,7 @@ following steps:
 	Username: admin
 	Password: changeme (or Password1 if using our image file)
   5) Click Admin->Network at the top of the page
-  6) DO NOT CHNANGE ANYTHING
+  6) DO NOT CHANGE ANYTHING
   7) Click 'Save Network Settings'
   8) Once it says it saved successfully, reboot the Pi"
 
