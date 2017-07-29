@@ -134,7 +134,12 @@ NETCFG_PATH="$PKG_HOME/MMNE/Network/Config"
 sudo cp "$NETCFG_PATH/dhcpcd.conf" "/etc/dhcpcd.conf"
 
 echo "[NET] Network Setup Done!"
-
+echo "[PASSWORD] Changing password."
+sudo passwd pi << EOF
+Password1
+Password1
+EOF
+echo "[PASSWORD] Password is now: Password1"
 echo "#########################################
 Reboot the RPi for changes to take effect
 IMPORTANT:
