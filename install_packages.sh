@@ -92,7 +92,7 @@ mkdir $HSMM_Path
 cd $HSMM_Path
 git clone https://github.com/urlgrey/hsmm-pi.git
 cd "$HSMM_Path/hsmm-pi"
-sudo runuser -l pi -c "$HSMM_Path/hsmm-pi/install.sh"
+sudo runuser -l pi -c "$HSMM_Path/install.sh"
 echo "[GIT] HSMM-Pi Done!"
 
 #All git files downloaded successfully
