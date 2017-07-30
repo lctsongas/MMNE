@@ -1,32 +1,55 @@
-import socket, threading, sys
+import socket, sys
+import threading as tr
 import traceback, os, math
 from time import time
 from Queue import Queue
 import subprocess
 
 class MeshNetworkUtil:
-    HOST = ''   # Listen to all 
-    PORT = 7331 # Random port
-    DONE = False # Closes socket when done
-    isServer = True # Keeps multiple Utils from using same socket
-    debug = False # Debugging off (default) / on
-    isListening = False # Determines if listening thread is already running
-    clientPorts = {'127.0.0.1' : 7331 }
+    #Priority and packet flags defined below
+    PQ_DEFAULT = 10         #Default priority in queue
+    PQ_EMERGCY = 1          #Emergency packets get highest priority
+    
+                            # A2S = Flag sent from AP to Server
+                            # S2A = Flag sent from Server to AP
+                            # A2A = Flag sent from AP to AP
+    FG_NONE      = 0        # Undefined: A2S/S2A/A2A, Flag for general purpose packets
+    FG_OKAY      = 1        # OK       : A2S, ready and waiting
+    FG_LOWPWR    = 2        # Low Power: A2S, losing client signal, AP running low pwr subroutine
+    FG_MOVETO    = 3        # Move to  : S2A, x,y to go to
+    FG_MOVING    = 4        # Moving   : A2S, also sends current x,y and dest x,y
+    FG_WHEREUAT  = 5        # Poll x,y : S2A, ask AP for his current location
+    FG_TOOFAR    = 7        # AP far   : S2A, Stops AP so it doesn't go out of range
+    FG_ASKHELP   = 8        # Ask help : A2A & A2S, Asks other nodes for help extending coverage
+    FG_YOUSTOP   = 99       # Stop move: S2A, Halts single robot from moving
+    FG_ALLSTOP   = 100      # Stop move: S2A, Halts all robots form moving
+    
+    #Module flags and fields defined below
+    HOST         = ''       # Listen to all 
+    PORT         = 7331     # Random port
+    debug        = True    # Debugging off (default) / on
+    stopRx = tr.Event()     # Stops/resets packet receiving thread if set
+    stopAP = tr.Event()     # Stops/resets AP listening thread if set
+    clientPorts  = {'127.0.0.1' : 7331 }
     
     # Datagram (udp) socket
     def __init__(self, debugOn = False):
-        """Open socket for listening"""
+        """Initialize MeshUtil object"""
         if debugOn: #Turn on debugging, off by default
             self.debug = True
-        self.mbox = Queue()
+            
+        self.mbox = PriorityQueue()
+        
         # Create socket on local host
         try :
             self.socketUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.socketUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             self.clientPorts[socket.gethostbyname(socket.gethostname())] = self.PORT
         except socket.error, msg :
-            print 'Ignore error if this is the 2nd instance'
+            print 'ERROR: 2 MeshNetworkUtil modules running!'
+            print 'Only 1 allowed per device'
             print '[' + str(msg[0]) + '] : ' + msg[1]
+            exit 
         # Bind socket to local host and port
         try:
             self.socketUDP.bind((self.HOST, self.PORT))
@@ -34,18 +57,49 @@ class MeshNetworkUtil:
                 print  '    Socket bind complete'
         except socket.error , msg:
             print '[' + str(msg[0]) + '] : ' + msg[1]
-            self.isServer = False
-        if self.isServer:
-            self.startListening()
+
+        # Create threading objects
+        self.rxThread = tr.Thread(target=self.listenUDP)
+        self.apthread = tr.Thread(target=self.startAPMonitor)
  
     #now keep listening with the client
     def startListening(self):
         """Create new thread for UDP"""
-        if not self.isListening:
-            self.isListening = True
-            threading.Thread(target=self.listenUDP).start()
-            self.queueEvent = threading.Event()
-            self.queueEvent.clear()
+        if not self.rxThread.isAlive():
+            self.stopRx.clear()
+            self.rxThread.start()
+
+    def startAPMonitor(self):
+        """Starts thread for motoring client power"""
+        if not self.apThread.isAlive():
+            self.stopAP.clear()
+            self.apThread.start()
+            
+    def close(self):
+        """Stop the MeshUtil"""
+        self.socketUDP.close()
+        if not self.stopAP.isSet():
+            self.stopAP.set()
+            self.apThread = tr.Thread(target=self.startAPMonitor)
+        if not self.stopRx.isSet():
+            self.stopRx.set()
+            self.rxThread = tr.Thread(target=self.listenUDP)
+
+    def sendPacket(self, data, dest, msgType = 1, flags = FG_NONE):
+        """sends UDP packet to broadcast"""
+        if self.debug:
+            print  '    sendData( data = ' + data + ', host = ' + host + ' )'
+        # Setup UDP packet contents
+        packet = MeshPacket()
+        packet.encode(dest, data, msgType, flags)
+        try :
+            #Set the whole string
+            self.socketUDP.sendto(packet.getPacket(), (dest, self.PORT))
+            #self.startListening()
+        except socket.error, msg:
+            print '[' + str(msg[0]) + '] : ' + msg[1]
+            self.close()
+
 
     def listenUDP(self):
         """Listen for UDP traffic"""
@@ -54,41 +108,27 @@ class MeshNetworkUtil:
             d = self.socketUDP.recvfrom(20480)
             packet = MeshPacket()
             packet.decode(d[0])
-            if not packet.getPayload():
-                self.isListening = False
-                break
+            
             if self.debug:
                 print  '    time: ' + str(packet.timestamp())
                 print  '    address: ' + packet.address()
                 print  '    payload: ' + packet.getPayload()
             self.clientPorts[packet.address()] = d[1][1]
-            self.mbox.put(packet.getPacket())
-
-    def closeSocket(self):
-        self.DONE = True
-        self.socketUDP.close()
-
-    def sendPacket(self, data, host, msgType = 1, flags = 0):
-        """sends UDP packet to broadcast"""
-        if self.debug:
-            print  '    sendData( data = ' + data + ', host = ' + host + ' )'
-        # Setup UDP packet contents
-        packet = MeshPacket()
-        packet.encode(host, data, msgType, flags)
-        try :
-            #Set the whole string
-            self.socketUDP.sendto(packet.getPacket(), ('<broadcast>', self.PORT))
-            self.startListening()
-        except socket.error, msg:
-            print '[' + str(msg[0]) + '] : ' + msg[1]
-            self.closeSocket()
             
+            #Set priority of packet in queue here
+            priority = PQ_DEFAULT # Set default priority
+            if packet.flags() == FG_YOUSTOP or packet.flags() == FG_ALLSTOP:
+                #Emergency stop priority set
+                priority = PQ_EMERGCY
+            self.mbox.put((priority , packet.getPacket()))
+
+    
     def getData(self):
         """Dequeues the next element sent to host"""
         try :
             dequeued = self.mbox.get(False)
             packet = MeshPacket()
-            packet.decode(dequeued)
+            packet.decode(dequeued[1])
             data = packet.getPayload()
             if self.debug:
                 print  '    getData() -> ' + data
@@ -96,21 +136,23 @@ class MeshNetworkUtil:
         except :
             if self.debug:
                 print  '    Queue empty'
-            return 'None'
+            return None
+
 
     def getPacket(self):
         """Dequeues a packet object if it exists"""
         try :
             dequeued = self.mbox.get(False)
             packet = MeshPacket()
-            packet.decode(dequeued)
+            packet.decode(dequeued[1])
             if self.debug:
                 print  '    getPacket() -> ' + str(packet.payloadLength()) + ' bytes'
             return packet
         except :
             if self.debug:
                 print  '    Queue empty'
-            return 'None'
+            return None
+
 
     def meshPortMap(self):
         for key in self.clientPorts:
@@ -120,9 +162,66 @@ class MeshNetworkUtil:
     def toggleDebug(self):
         self.debug = not self.debug
         print 'debug = ' + str(self.debug)
+
+    # A2S = Flag sent from AP to Server
+    # S2A = Flag sent from Server to AP
+    # A2A = Flag sent from AP to AP
+    #See top of class for info
+    # Undefined: A2S/S2A/A2A, Flag for general purpose packets
+    def sendGeneric(self, dest='<broadcast>', data='Test'):
+        self.sendPacket(data, dest, flags=FG_NONE)
+                        
+    #See top of class for info
+    # OK       : A2S, ready and waiting
+    def sendOK(self, dest='10.0.0.2'):
+        self.sendPacket('', dest, flags=FG_OKAY)
+
+    #See top of class for info
+    # Low Power: A2S, losing client signal, AP running low pwr subroutine
+    def sendLowPower(self, dest='10.0.0.2'):
+        self.sendPacket('', dest, flags=FG_LOWPWR)
+
+    #See top of class for info
+    # Move to  : S2A, x,y to go to
+    def sendMoveTo(self, dest, x, y):
+        data = str(x) + ', ' + str(y)
+        self.sendPacket(data, dest, flags=FG_MOVETO)
         
+    #See top of class for info
+    # Moving   : A2S, also sends current x,y and dest x,y
+    def sendCoords(self, dest='10.0.0.2', x_current, y_current, x_destination, y_destination):
+        data_current = str(x_current) + ', ' + str(y_current)
+        data_destination = str(x_destination) + ', ' + str(y_destination)
+        data = data_current + ', ' + data_destination
+        self.sendPacket(data, dest, flags=FG_MOVING)
 
+    #See top of class for info
+    # Poll x,y : S2A, ask AP for his current location
+    def pollCoords(self, dest):
+        self.sendPacket('', dest, flags=FG_WHEREUAT)
+    #See top of class for info
+    # AP far   : S2A, Stops AP so it doesn't go out of range
+    def stopAPTooFar(self, dest):
+        self.sendPacket('',dest,flags=FG_TOOFAR)
 
+    #See top of class for info
+    # Ask help : A2A & A2S, Asks other nodes for help extending coverage
+    def askHelp(self):
+        self.sendPacket('','<broadcast>',flags=FG_ALLSTOP)
+        
+    #See top of class for info
+    # Stop move: S2A, Halts single robot from moving
+    def stopAPNow(self, dest):
+        self.sendPacket('',dest,flags=FG_YOUSTOP)
+        
+    #See top of class for info
+    # Stop move: S2A, Halts all robots form moving
+    def stopAPAll(self):
+        self.sendPacket('','<broadcast>',flags=FG_ALLSTOP)
+
+    
+        
+    
 HEADER_SIZE = 20
 
 class MeshPacket:   
@@ -238,4 +337,5 @@ class MeshPacket:
     def getPacket(self):
         """Return RTP packet."""
         return self.header + self.payload
+
 
