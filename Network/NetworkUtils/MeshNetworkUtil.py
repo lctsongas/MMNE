@@ -2,7 +2,7 @@ import socket, sys
 import threading as tr
 import traceback, os, math
 from time import time
-from Queue import Queue
+from Queue import *
 import subprocess
 
 class MeshNetworkUtil:
@@ -27,7 +27,7 @@ class MeshNetworkUtil:
     #Module flags and fields defined below
     HOST         = ''       # Listen to all 
     PORT         = 7331     # Random port
-    debug        = True    # Debugging off (default) / on
+    debug        = False    # Debugging off (default) / on
     stopRx = tr.Event()     # Stops/resets packet receiving thread if set
     stopAP = tr.Event()     # Stops/resets AP listening thread if set
     clientPorts  = {'127.0.0.1' : 7331 }
@@ -88,7 +88,7 @@ class MeshNetworkUtil:
     def sendPacket(self, data, dest, msgType = 1, flags = FG_NONE):
         """sends UDP packet to broadcast"""
         if self.debug:
-            print  '    sendData( data = ' + data + ', host = ' + host + ' )'
+            print  '    sendData( data = ' + data + ', host = ' + dest + ' )'
         # Setup UDP packet contents
         packet = MeshPacket()
         packet.encode(dest, data, msgType, flags)
@@ -125,18 +125,18 @@ class MeshNetworkUtil:
     
     def getData(self):
         """Dequeues the next element sent to host"""
-        try :
-            dequeued = self.mbox.get(False)
-            packet = MeshPacket()
-            packet.decode(dequeued[1])
-            data = packet.getPayload()
-            if self.debug:
-                print  '    getData() -> ' + data
-            return data
-        except :
-            if self.debug:
-                print  '    Queue empty'
-            return None
+        #try :
+        dequeued = self.mbox.get(False)
+        packet = MeshPacket()
+        packet.decode(dequeued[1])
+        data = packet.getPayload()
+        if self.debug:
+            print  '    getData() -> ' + data
+        return data
+        #except :
+        #    if self.debug:
+        #        print  '    Queue empty'
+        #    return None
 
 
     def getPacket(self):
@@ -169,55 +169,56 @@ class MeshNetworkUtil:
     #See top of class for info
     # Undefined: A2S/S2A/A2A, Flag for general purpose packets
     def sendGeneric(self, dest='<broadcast>', data='Test'):
-        self.sendPacket(data, dest, flags=FG_NONE)
+        self.sendPacket(data, dest, flags=self.FG_NONE)
                         
     #See top of class for info
     # OK       : A2S, ready and waiting
     def sendOK(self, dest='10.0.0.2'):
-        self.sendPacket('', dest, flags=FG_OKAY)
+        self.sendPacket('', dest, flags=self.FG_OKAY)
 
     #See top of class for info
     # Low Power: A2S, losing client signal, AP running low pwr subroutine
     def sendLowPower(self, dest='10.0.0.2'):
-        self.sendPacket('', dest, flags=FG_LOWPWR)
+        self.sendPacket('', dest, flags=self.FG_LOWPWR)
 
     #See top of class for info
     # Move to  : S2A, x,y to go to
     def sendMoveTo(self, dest, x, y):
         data = str(x) + ', ' + str(y)
-        self.sendPacket(data, dest, flags=FG_MOVETO)
+        self.sendPacket(data, dest, flags=self.FG_MOVETO)
         
     #See top of class for info
     # Moving   : A2S, also sends current x,y and dest x,y
-    def sendCoords(self, dest='10.0.0.2', x_current, y_current, x_destination, y_destination):
+    def sendCoords(self, x_current, y_current, x_destination, y_destination, dest='10.0.0.2'):
         data_current = str(x_current) + ', ' + str(y_current)
         data_destination = str(x_destination) + ', ' + str(y_destination)
         data = data_current + ', ' + data_destination
-        self.sendPacket(data, dest, flags=FG_MOVING)
+        self.sendPacket(data, dest, flags=self.FG_MOVING)
 
     #See top of class for info
     # Poll x,y : S2A, ask AP for his current location
     def pollCoords(self, dest):
-        self.sendPacket('', dest, flags=FG_WHEREUAT)
+        self.sendPacket('', dest, flags=self.FG_WHEREUAT)
+        
     #See top of class for info
     # AP far   : S2A, Stops AP so it doesn't go out of range
     def stopAPTooFar(self, dest):
-        self.sendPacket('',dest,flags=FG_TOOFAR)
+        self.sendPacket('',dest,flags=self.FG_TOOFAR)
 
     #See top of class for info
     # Ask help : A2A & A2S, Asks other nodes for help extending coverage
     def askHelp(self):
-        self.sendPacket('','<broadcast>',flags=FG_ALLSTOP)
+        self.sendPacket('','<broadcast>',flags=self.FG_ALLSTOP)
         
     #See top of class for info
     # Stop move: S2A, Halts single robot from moving
     def stopAPNow(self, dest):
-        self.sendPacket('',dest,flags=FG_YOUSTOP)
+        self.sendPacket('',dest,flags=self.FG_YOUSTOP)
         
     #See top of class for info
     # Stop move: S2A, Halts all robots form moving
     def stopAPAll(self):
-        self.sendPacket('','<broadcast>',flags=FG_ALLSTOP)
+        self.sendPacket('','<broadcast>',flags=self.FG_ALLSTOP)
 
     
         
