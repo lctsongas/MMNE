@@ -12,11 +12,18 @@ import math
 import sys
 import atexit
 
+sys.path.append("/home/pi/MMNE/Network/NetworkUtils")
+import MeshNetworkUtil as Mesh
+
+network = Mesh.MeshNetworkUtil()
+network.startListening()
+network.startAPMonitor()
 #imu = classes.IMU_Operations()
 bno = BNO055.BNO055(serial_port='/dev/ttyAMA0', rst=18)
 #if not bno.begin():
 #    raise RuntimeError('Failed to initialize BNO055! Is the sensor connected?')
 motor = classes.Motor_Operations()
+
 
 isSave = True #save position data to text file
 isdestination = False #currently no destination set, reads True if destination set
@@ -292,9 +299,71 @@ while True:
           heading, sys, gyro, accel, mag))
         
         #################
-        xdestination = float(raw_input('xcoord: '))
-        ydestination = float(raw_input('ycoord: '))
-        isdestination = True
+        
+        
+        packet = network.getPacket()
+        if packet == None:
+            network.sendOK()
+        else:
+            flag = packet.flags()
+            if flag == Mesh.FG_NONE:
+                # Undefined: A2S/S2A/A2A, Flag for general purpose packets
+                #Do stuff for general packets
+                print 'General packet received'
+            elif flag == Mesh.FG_MOVETO:
+                # Move to  : S2A, x,y to go to
+                data = packet.getPayload()
+                dataSplit = data.split(', ')
+                xdestination = float(dataSplit[0])
+                ydestination = float(dataSplit[1])
+                isdestination = True
+                network.sendCoords(xcurrent, ycurrent, xdestination, ydestination)
+            elif flag == Mesh.FG_WHEREUAT:
+                # Poll x,y : S2A, ask AP for his current location
+                network.sendCoords(xcurrent, ycurrent, xdestination, ydestination)
+            elif flag == Mesh.FG_TOOFAR:
+                # AP far   : S2A, Stops AP so it doesn't go out of range
+                # PLEASE CHECK THIS
+                ismoving = False
+                isturning = False
+                isdestination = False
+                ismovingforward = False
+                motor_op.gradstop(pwm1, pwm2, pwm3, pwm4)
+                xallincrements = 0.0
+                yallincrements = 0.0
+                pastdistance = 0.0
+                # IS X/YCURRENT ALWAYS ACCURATE?
+                network.askHelp(xcurrent,ycurrent)
+            elif flag == Mesh.FG_YOUSTOP:
+                ismoving = False
+                isturning = False
+                isdestination = False
+                ismovingforward = False
+                motor_op.gradstop(pwm1, pwm2, pwm3, pwm4)
+                xallincrements = 0.0
+                yallincrements = 0.0
+                pastdistance = 0.0
+                network.sendOK()
+            elif flag == Mesh.FG_ALLSTOP:
+                ismoving = False
+                isturning = False
+                isdestination = False
+                ismovingforward = False
+                motor_op.gradstop(pwm1, pwm2, pwm3, pwm4)
+                xallincrements = 0.0
+                yallincrements = 0.0
+                pastdistance = 0.0
+                network.sendOK()
+            else:
+                #RERUN LOOP?
+                print 'Unhandled packet'
+                network.printPacket(packet)
+                continue
+            
+                
+        #xdestination = float(raw_input('xcoord: '))
+        #ydestination = float(raw_input('ycoord: '))
+        #isdestination = True
         #print('xy position flag status: ' + str(xypositionFlag.isSet()))
         xypositionFlag.clear() #ready for calculation
         acceldistanceFlag.clear()
