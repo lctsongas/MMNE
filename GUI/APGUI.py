@@ -17,7 +17,6 @@ class AP:
     
     def __init__(self,canvas,xOrigin,yOrigin,mac,ip):
         """Init AP to (0,0)"""
-        print 'Test'
         self.canvas = canvas
         self.xPos = 0   # In pixels
         self.yPos = 0   # In pixels
