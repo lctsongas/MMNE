@@ -121,6 +121,8 @@ class MeshNetworkUtil:
             if packet.flags() == FG_YOUSTOP or packet.flags() == FG_ALLSTOP:
                 #Emergency stop priority set
                 priority = PQ_EMERGCY
+            elif packet.flags() == FG_TOOFAR:
+                priority = PQ_EMERGCY
             self.mbox.put((priority , packet.getPacket()))
 
     
@@ -138,6 +140,7 @@ class MeshNetworkUtil:
         #    if self.debug:
         #        print  '    Queue empty'
         #    return None
+
 
 
     def getPacket(self):
@@ -190,6 +193,10 @@ class MeshNetworkUtil:
             if foundmac != None and foundip != None:
                     retDict[foundip.group(0)] = foundmac.group(0)
         return retDict
+
+    def checkSignals(self, iwData):
+        """Only called every 5 seconds"""
+        return None
 
     def meshPortMap(self):
         for key in self.clientPorts:
@@ -252,8 +259,9 @@ class MeshNetworkUtil:
 
     #See top of class for info
     # Ask help : A2A & A2S, Asks other nodes for help extending coverage
-    def askHelp(self):
-        self.sendPacket('','<broadcast>',flags=FG_ALLSTOP)
+    def askHelp(self,xcurrent,ycurrent):
+        data = str(x) + ', ' + str(y)
+        self.sendPacket(data,'<broadcast>',flags=FG_ALLSTOP)
         
     #See top of class for info
     # Stop move: S2A, Halts single robot from moving
