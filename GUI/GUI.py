@@ -1,35 +1,15 @@
-import sys
-sys.path.append("/home/pi/MMNE/Network/NetworkUtils")
-from MeshNetworkUtil import *
 from Tkinter import *
 import tkMessageBox
 import time
+import math
 import APGUI
+import random
 apnum = 0
 
 
 class NET_GUI:
-
-    #Priority and packet flags defined below
-    PQ_DEFAULT = 10         #Default priority in queue
-    PQ_EMERGCY = 1          #Emergency packets get highest priority
-    
-                            # A2S = Flag sent from AP to Server
-                            # S2A = Flag sent from Server to AP
-                            # A2A = Flag sent from AP to AP
-    FG_NONE      = 0        # Undefined: A2S/S2A/A2A, Flag for general purpose packets
-    FG_OKAY      = 1        # OK       : A2S, ready and waiting
-    FG_LOWPWR    = 2        # Low Power: A2S, losing client signal, AP running low pwr subroutine
-    FG_MOVETO    = 3        # Move to  : S2A, x,y to go to
-    FG_MOVING    = 4        # Moving   : A2S, also sends current x,y and dest x,y
-    FG_WHEREUAT  = 5        # Poll x,y : S2A, ask AP for his current location
-    FG_TOOFAR    = 7        # AP far   : S2A, Stops AP so it doesn't go out of range
-    FG_ASKHELP   = 8        # Ask help : A2A & A2S, Asks other nodes for help extending coverage
-    FG_YOUSTOP   = 99       # Stop move: S2A, Halts single robot from moving
-    FG_ALLSTOP   = 100      # Stop move: S2A, Halts all robots form moving
-    
     INTERVAL = 2
-    TOTAL = 0
+    TOTAL = 1
     APDict = {}
     
     def __init__(self,master, winWidth, winHeight):
@@ -38,17 +18,16 @@ class NET_GUI:
         #set canvas dimensions
         self.WIDTH=int(winWidth)
         self.HEIGHT=int(winHeight)
+        
         #find canvas origin
         self.xOrigin=self.WIDTH/2
         self.yOrigin=self.HEIGHT/2
         #create canvas
         self.createWidgets()
-        self.oldTime = time.time()
-        self.newTime = time.time() + 2
-        self.network = MeshNetworkUtil(False) # Set to false on release
-        self.network.startListening()
+        self.newTime = self.oldTime = time.time()
+        print 'Init done'
 
-        self.status = Frame(self.master)
+        #self.status = Frame(self.master)
         
 
     def createWidgets(self):
@@ -70,12 +49,11 @@ class NET_GUI:
                                      dash=(1,1))
 
         #create GatWay rectangul with half width gw
-        gw = 10
-        self.canvas.create_rectangle(self.xOrigin-gw,
-                                    self.yOrigin-gw,
-                                    self.xOrigin+gw,
-                                    self.yOrigin+gw,
-                                    fill='green')
+        self.gateway = APGUI.GW(self.canvas,
+                                self.xOrigin,
+                                self.yOrigin,
+                                '00:00:00',
+                                '10.0.0.1')
 	
     def monitorAP(self):
         """Listen to network for MeshPackets"""
@@ -87,32 +65,57 @@ class NET_GUI:
             except:
                 return
     
-    
+    def addAP(self,TAG):
+        mac = TAG
+        ip = '10.0.0'
+        newAP = APGUI.AP(self.canvas, self.xOrigin, self.yOrigin, mac, ip)
+        self.APDict[mac] = newAP
 
+    
+    def moveAP(self,TAG,xfinal,yfinal):
+        movingAP = self.APDict[TAG]
+        oldCoords  = movingAP.getCenter()
+        newCoords = (xfinal, yfinal)
+        movingAP.move(newCoords)
+        print TAG + ': ' + str(oldCoords) + '->' + str(newCoords) 
+
+    def test_loop(self):
+        if(self.newTime == self.oldTime) :
+            self.addAP('aptest' + str(self.TOTAL))
+            self.TOTAL+=1
+            self.addAP('aptest' + str(self.TOTAL))
+            self.TOTAL+=1
+        self.newTime = time.time()
+        elapsed = self.newTime - self.oldTime
+        #Move AP1
+        x1 = random.uniform(-1.0,1.0)
+        y1 = random.uniform(-1.0,1.0)
+        xcurr = self.APDict['aptest1'].getCenterMeters()[0]
+        ycurr = self.APDict['aptest1'].getCenterMeters()[1]
+        self.moveAP('aptest1', xcurr+x1,ycurr+y1)
+        #Move AP2
+        x2 = random.uniform(-2.0,2.0)
+        y2 = random.uniform(-2.0,2.0)
+        xcurr = self.APDict['aptest2'].getCenterMeters()[0]
+        ycurr = self.APDict['aptest2'].getCenterMeters()[1]
+        self.moveAP('aptest2', xcurr+x2,ycurr+y2)
+        #self.oldTime = time.time()
+        #time.sleep(1)
+        self.master.after(32, self.test_loop)
+        
     def gui_loop(self):
         #Do crap here
-        #self.newTime = time.time()
-        #elapsedTime = self.newTime - self.oldTime
-        #print 'Time: ' + str(elapsedTime)
-        #if elapsedTime >= self.INTERVAL:
+        
         #    self.oldTime = time.time()
-        #    apStr = 'AP' + str(self.TOTAL)
         #    mac = '00:00:' + str(self.TOTAL)
         #    ip = '10.0.0.' + str(self.TOTAL)
-        #    newAP = APGUI.AP(self.canvas, apStr, self.xOrigin, self.yOrigin, mac, ip)
+        #    newAP = APGUI.AP(self.canvas, self.xOrigin, self.yOrigin, mac, ip)
         #    self.APDict[mac] = newAP
         #for keys,value in self.APDict.iteritems():
         #    x,y = value.getCenter()
         #    newCoords = (x+1, y+1)
         #    value.move(newCoords)
         #    print keys + '@:' + str(self.APDict[keys].getCenter())
-        packet = self.network.getPacket()
-        if not packet == None:
-            print "GUI Flags: " + str(packet.flags())
-            print "GUI Data : " + packet.getPayload()
-            srcIP = packet.srcAddress()
-            print "GUI srcIP: " + srcIP
-            self.network.sendMoveTo(srcIP, 2, 0)
         self.master.after(32, self.gui_loop) 
 
     def doStuff(self):

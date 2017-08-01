@@ -1,14 +1,24 @@
 from Tkinter import *
 
+                    # 1 meter = 2 
+PX2M = 0.5          # Pixels to meters scalar
+M2PX = 1/PX2M       # Meters to pixels scalar
+
+def meters2pixels(coordsInMeters):
+        return (int(coordsInMeters[0]*M2PX), int(coordsInMeters[1]*M2PX))
+
+def pixels2meters(coordsInPixels):
+        return (float(coordsInPixels[0])*PX2M, float(coordsInPixels[1])*PX2M)
+    
+
 class AP:
     RADIUS = 5          # Circle radius
-    PX2M = 0.5          # Pixels to meters scalar
-    M2PX = 1/PX2M       # Meters to pixels scalar
+    apColor = 'red'
     
-    def __init__(self,canvas,tag,xOrigin,yOrigin,mac,ip):
+    def __init__(self,canvas,xOrigin,yOrigin,mac,ip):
         """Init AP to (0,0)"""
+        print 'Test'
         self.canvas = canvas
-        self.name = tag
         self.xPos = 0   # In pixels
         self.yPos = 0   # In pixels
         self.drawXPos = xOrigin
@@ -24,15 +34,25 @@ class AP:
                                                 self.drawYPos-self.RADIUS,
                                                 self.drawXPos+self.RADIUS,
                                                 self.drawYPos+self.RADIUS,
-                                                fill='red',
+                                                fill=self.apColor,
                                                 tags=(self.macAddr,))
 
 
     def getCenter(self):
         """Get relative x,y coords"""
-        print 'X: ' + str(self.xPos) + ' Y: ' + str(self.yPos)
+        #print 'Xp: ' + str(self.xPos) + ' Yp: ' + str(self.yPos)
+        coords = (self.xPos, self.yPos)
+        xR, yR = pixels2meters(coords)
+        #print 'Xr: ' + str(xR) + ' Yr: ' + str(yR)
         return self.xPos,self.yPos
-        
+
+    def getCenterMeters(self):
+        """Get real x,y coords"""
+        #print 'Xp: ' + str(self.xPos) + ' Yp: ' + str(self.yPos)
+        coords = (self.xPos, self.yPos)
+        xR, yR = pixels2meters(coords)
+        #print 'Xr: ' + str(xR) + ' Yr: ' + str(yR)
+        return xR,yR
 
     def getdrawCenter(self):
         """Get x,y based on top left corner"""
@@ -40,7 +60,7 @@ class AP:
 
     def move(self, coordsInMeters):
         """update x,y stuff with new coords in meters"""
-        xInPixels,yInPixels = self.meters2pixels(coordsInMeters)
+        xInPixels,yInPixels = meters2pixels(coordsInMeters)
         
         deltaX = xInPixels - self.xPos
         deltaY = yInPixels - self.yPos
@@ -53,11 +73,23 @@ class AP:
         self.canvas.move(self.macAddr, deltaX, deltaY)
         
 
-    def meters2pixels(self, coordsInMeters):
-        return (coordsInMeters[0]*self.M2PX, coordsInMeters[1]*self.M2PX)
 
-    def pixels2meters(self, coordsInPixels):
-        return (coordsInPixels[0]*self.PX2M, coordsInPixels[1]*self.PX2M)
+
+class GW(AP):
+    
+    LENGTH = 5
+    gwColor = 'green'
+    
+        
+
+
+    def draw(self):
+        self.gwRect = self.canvas.create_rectangle(self.drawXPos-self.LENGTH,
+                                                   self.drawYPos-self.LENGTH,
+                                                   self.drawXPos+self.LENGTH,
+                                                   self.drawYPos+self.LENGTH,
+                                                   fill=self.gwColor)
+                                                   
         
         
         
