@@ -20,10 +20,18 @@ def distance_togo(xCurrent, yCurrent, xDestination, yDestination):
                                 + ((yDestination - yCurrent) * (yDestination - yCurrent)))
     return xydist
 
+### Test Later
 #find bearing in degrees relative to x-axis
-def bearing_deg(xCurrent, yCurrent, xDestination, yDestination):
-    xyangle = math.degrees(math.atan2((yDestination - yCurrent),(xDestination - xCurrent)))
+def bearing_deg(xDestination, yDestination):
+    xyangle = math.degrees(math.atan2(yDestination, xDestination))
+    if xyangle < 0:
+        xyangle = 360 + xyangle
     return xyangle
+#def bearing_deg(xCurrent, yCurrent, xDestination, yDestination):
+#    xyangle = math.degrees(math.atan2((yDestination - yCurrent),(xDestination - xCurrent)))
+#    if xyangle < 0:
+#        xyangle = 360 + xyangle
+#    return xyangle
 
 #Return degree angle between current heading and bearing
 def angle_diff(heading, bearing):
@@ -37,14 +45,14 @@ def rotation_dir(heading, bearing):
     dif = bearing - heading
     if dif > 0:
         if dif > 180:
-            CW = False
-        else:
             CW = True
+        else:
+            CW = False
     else:
         if dif >= -180:
-            CW = False
-        else:
             CW = True
+        else:
+            CW = False
     return CW
 
 #Haversine calculation to determine distance between 2 sets of Lat/Lon coordinates
