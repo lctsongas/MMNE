@@ -26,7 +26,8 @@ def sendMessage():
                7 : ('Stop AP from extending coverage',server.stopAPTooFar) ,
                8 : ('AP needs help going farther',server.askHelp),
                9 : ('Stop AP',server.stopAPNow),
-               10: ('Stop ALL APs',server.stopAPAll)
+               10: ('Stop ALL APs',server.stopAPAll),
+               11: ('Arp' , server.arpTable)
     }
     for option in options:
         print str(option) + ' = ' + options[option][0]
@@ -61,12 +62,24 @@ def sendMessage():
         options[num][1](ip)
     elif num == 10: # Stop all APs
         options[num][1]()
+    
 
-def getDataFromServer():
-    dataOut = server.getData()
-    if dataOut == None:
-        return None
-    print '  Msg from network: ' + dataOut
+def getInfo():
+    print ''
+    options = {1 : ('Arp Table',server.arpTable),
+               2 : ('Who is (arp)',server.arpIP),
+               3 : ('Arp and IP map', server.getArpAndIP)
+    }
+    for option in options:
+        print str(option) + ' = ' + options[option][0]
+    num = input('Select option: ')
+    if num == 1: # Return whole arp table
+        print options[num][1]()
+    elif num == 2: # Get mac of ip
+        ip = raw_input('Enter IP : ')
+        print options[num][1](ip)
+    elif num == 3: # map ip to mac
+        print options[num][1]()
     
 
 def getPacketFromServer():
@@ -106,7 +119,7 @@ def main():
             print ''
             options = {1 : ('send packet',sendMessage) ,
                        2 : ('retrieve whole packet',getPacketFromServer),
-                       3 : ('retrieve payload only',getDataFromServer),
+                       3 : ('get network info',getInfo),
                        4 : ('toggleDebug',debugOnOff),
                        5 : ('print port map',portMap),
                        6 : ('exit', close)

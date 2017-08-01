@@ -1,28 +1,29 @@
 import socket, sys
 import threading as tr
-import traceback, os, math
+import traceback, os, math, re
 from time import time
 from Queue import *
 import subprocess
 
+#Priority and packet flags defined below
+PQ_DEFAULT = 10         #Default priority in queue
+PQ_EMERGCY = 1          #Emergency packets get highest priority
+
+                        # A2S = Flag sent from AP to Server
+                        # S2A = Flag sent from Server to AP
+                        # A2A = Flag sent from AP to AP
+FG_NONE      = 0        # Undefined: A2S/S2A/A2A, Flag for general purpose packets
+FG_OKAY      = 1        # OK       : A2S, ready and waiting
+FG_LOWPWR    = 2        # Low Power: A2S, losing client signal, AP running low pwr subroutine
+FG_MOVETO    = 3        # Move to  : S2A, x,y to go to
+FG_MOVING    = 4        # Moving   : A2S, also sends current x,y and dest x,y
+FG_WHEREUAT  = 5        # Poll x,y : S2A, ask AP for his current location
+FG_TOOFAR    = 7        # AP far   : S2A, Stops AP so it doesn't go out of range
+FG_ASKHELP   = 8        # Ask help : A2A & A2S, Asks other nodes for help extending coverage
+FG_YOUSTOP   = 99       # Stop move: S2A, Halts single robot from moving
+FG_ALLSTOP   = 100      # Stop move: S2A, Halts all robots form moving
+
 class MeshNetworkUtil:
-    #Priority and packet flags defined below
-    PQ_DEFAULT = 10         #Default priority in queue
-    PQ_EMERGCY = 1          #Emergency packets get highest priority
-    
-                            # A2S = Flag sent from AP to Server
-                            # S2A = Flag sent from Server to AP
-                            # A2A = Flag sent from AP to AP
-    FG_NONE      = 0        # Undefined: A2S/S2A/A2A, Flag for general purpose packets
-    FG_OKAY      = 1        # OK       : A2S, ready and waiting
-    FG_LOWPWR    = 2        # Low Power: A2S, losing client signal, AP running low pwr subroutine
-    FG_MOVETO    = 3        # Move to  : S2A, x,y to go to
-    FG_MOVING    = 4        # Moving   : A2S, also sends current x,y and dest x,y
-    FG_WHEREUAT  = 5        # Poll x,y : S2A, ask AP for his current location
-    FG_TOOFAR    = 7        # AP far   : S2A, Stops AP so it doesn't go out of range
-    FG_ASKHELP   = 8        # Ask help : A2A & A2S, Asks other nodes for help extending coverage
-    FG_YOUSTOP   = 99       # Stop move: S2A, Halts single robot from moving
-    FG_ALLSTOP   = 100      # Stop move: S2A, Halts all robots form moving
     
     #Module flags and fields defined below
     HOST         = ''       # Listen to all 
@@ -108,7 +109,7 @@ class MeshNetworkUtil:
             d = self.socketUDP.recvfrom(20480)
             packet = MeshPacket()
             packet.decode(d[0])
-            
+            print 'MeshUtil: got something!'
             if self.debug:
                 print  '    time: ' + str(packet.timestamp())
                 print  '    address: ' + packet.address()
@@ -153,11 +154,55 @@ class MeshNetworkUtil:
                 print  '    Queue empty'
             return None
 
+    def arpTable(self):
+        arpShell = subprocess.Popen(["arp","-a"],
+                                                 stdout=subprocess.PIPE,
+                                                 stderr=subprocess.PIPE)
+        return arpShell.communicate()[0]
+
+    def arpIP(self, ipaddr):
+        arptable = self.arpTable()
+        arplist = arptable.split('\n')
+        #print 'seraching for: ' + ipaddr
+        for line in arplist:
+            if line == None:
+                continue
+            foundip = re.search('\d+\.\d+\.\d+\.\d+', line).group(0)
+            if foundip == ipaddr:
+                #print 'found: ' + foundip
+                mac = re.search('..:..:..:..:..:..',line)
+                if mac != None:
+                    return mac.group(0)
+                else:
+                    break
+ 
+        return None
+
+    def getArpAndIP(self):
+        arptable = self.arpTable()
+        arplist = arptable.split('\n')
+        retDict = {}
+        for line in arplist:
+            if line == None:
+                continue
+            foundip = re.search('\d+\.\d+\.\d+\.\d+', line)
+            foundmac = re.search('..:..:..:..:..:..',line)
+            if foundmac != None and foundip != None:
+                    retDict[foundip.group(0)] = foundmac.group(0)
+        return retDict
 
     def meshPortMap(self):
         for key in self.clientPorts:
             print '  ' + key + ' : '  + str(self.clientPorts[key])
-            
+
+    def printPacket(self, packet):
+        retval  = 'Source IP: ' + packet.srcAddress() + '\n'
+        retval += '  Dest IP: ' + packet.address() + '\n'
+        retval += '  MsgType: ' + packet.messageType() + '\n'
+        retval += '    Flags: ' + packet.flags() + '\n'
+        retval += 'Timestamp: ' + packet.timestamp() + '\n'
+        retval += '     Data: ' + packet.getPayload()
+        return retval
 
     def toggleDebug(self):
         self.debug = not self.debug
@@ -169,23 +214,23 @@ class MeshNetworkUtil:
     #See top of class for info
     # Undefined: A2S/S2A/A2A, Flag for general purpose packets
     def sendGeneric(self, dest='<broadcast>', data='Test'):
-        self.sendPacket(data, dest, flags=self.FG_NONE)
+        self.sendPacket(data, dest, flags=FG_NONE)
                         
     #See top of class for info
     # OK       : A2S, ready and waiting
     def sendOK(self, dest='10.0.0.2'):
-        self.sendPacket('', dest, flags=self.FG_OKAY)
+        self.sendPacket('', dest, flags=FG_OKAY)
 
     #See top of class for info
     # Low Power: A2S, losing client signal, AP running low pwr subroutine
     def sendLowPower(self, dest='10.0.0.2'):
-        self.sendPacket('', dest, flags=self.FG_LOWPWR)
+        self.sendPacket('', dest, flags=FG_LOWPWR)
 
     #See top of class for info
     # Move to  : S2A, x,y to go to
     def sendMoveTo(self, dest, x, y):
         data = str(x) + ', ' + str(y)
-        self.sendPacket(data, dest, flags=self.FG_MOVETO)
+        self.sendPacket(data, dest, flags=FG_MOVETO)
         
     #See top of class for info
     # Moving   : A2S, also sends current x,y and dest x,y
@@ -193,32 +238,34 @@ class MeshNetworkUtil:
         data_current = str(x_current) + ', ' + str(y_current)
         data_destination = str(x_destination) + ', ' + str(y_destination)
         data = data_current + ', ' + data_destination
-        self.sendPacket(data, dest, flags=self.FG_MOVING)
+        self.sendPacket(data, dest, flags=FG_MOVING)
 
     #See top of class for info
     # Poll x,y : S2A, ask AP for his current location
     def pollCoords(self, dest):
-        self.sendPacket('', dest, flags=self.FG_WHEREUAT)
+        self.sendPacket('', dest, flags=FG_WHEREUAT)
         
     #See top of class for info
     # AP far   : S2A, Stops AP so it doesn't go out of range
     def stopAPTooFar(self, dest):
-        self.sendPacket('',dest,flags=self.FG_TOOFAR)
+        self.sendPacket('',dest,flags=FG_TOOFAR)
 
     #See top of class for info
     # Ask help : A2A & A2S, Asks other nodes for help extending coverage
     def askHelp(self):
-        self.sendPacket('','<broadcast>',flags=self.FG_ALLSTOP)
+        self.sendPacket('','<broadcast>',flags=FG_ALLSTOP)
         
     #See top of class for info
     # Stop move: S2A, Halts single robot from moving
     def stopAPNow(self, dest):
-        self.sendPacket('',dest,flags=self.FG_YOUSTOP)
+        self.sendPacket('',dest,flags=FG_YOUSTOP)
         
     #See top of class for info
     # Stop move: S2A, Halts all robots form moving
     def stopAPAll(self):
-        self.sendPacket('','<broadcast>',flags=self.FG_ALLSTOP)
+        self.sendPacket('','<broadcast>',flags=FG_ALLSTOP)
+
+    
 
     
         
@@ -338,5 +385,6 @@ class MeshPacket:
     def getPacket(self):
         """Return RTP packet."""
         return self.header + self.payload
+
 
 
