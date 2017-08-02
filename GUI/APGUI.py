@@ -15,7 +15,7 @@ class AP:
     RADIUS = 5          # Circle radius
     apColor = 'red'
     
-    def __init__(self,canvas,xOrigin,yOrigin,mac,ip):
+    def __init__(self,canvas,xOrigin,yOrigin,mac,ip,tag):
         """Init AP to (0,0)"""
         self.canvas = canvas
         self.xPos = 0   # In pixels
@@ -26,6 +26,7 @@ class AP:
         self.yOrigin = yOrigin
         self.macAddr = mac
         self.IP = ip
+        self.TAG = tag
         self.draw()
 
     def draw(self):
@@ -34,7 +35,12 @@ class AP:
                                                 self.drawXPos+self.RADIUS,
                                                 self.drawYPos+self.RADIUS,
                                                 fill=self.apColor,
-                                                tags=(self.macAddr,))
+                                                tags=(self.TAG,))
+        
+        self.apText = self.canvas.create_text(self.drawXPos-self.RADIUS,
+                                              self.drawYPos-self.RADIUS,
+                                              text = self.TAG,
+                                              anchor = 'nw')
 
 
     def getCenter(self):
@@ -70,6 +76,12 @@ class AP:
         self.drawXPos = self.drawXPos + deltaX
         self.drawYPos = self.drawYPos + deltaY
         self.canvas.move(self.macAddr, deltaX, deltaY)
+
+    def getIP(self):
+        return self.IP
+
+    def getMAC(self):
+        return self.macAddr
         
 
 

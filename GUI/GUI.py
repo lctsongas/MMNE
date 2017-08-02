@@ -5,7 +5,7 @@ import math
 import APGUI
 import random
 
-sys.path.append("/home/pi/MMNE/Network/NetworkUtils")
+sys.path.append("../Network/NetworkUtils")
 import MeshNetworkUtil as Mesh
 apnum = 0
 
@@ -31,19 +31,20 @@ class NET_GUI:
         self.newTime = self.oldTime = time.time()
 
         self.network = Mesh.MeshNetworkUtil()
-        self.network.startListening()
+        #self.network.startListening()
         #self.status = Frame(self.master)
         
 
     def createWidgets(self):
 	"""Build GUI"""
+	#Create canvas widget
 	self.canvas = Canvas(self.master,
                             width=self.WIDTH,
                             height=self.HEIGHT,
                             bg='white')
         
         self.canvas.pack(side=BOTTOM)
-        #create x,y coordinants(moves in pixles)
+        #create x,y coord lines(moves in pixles)
         self.canvas.create_line(self.WIDTH/2,0,
                                      self.WIDTH/2,
                                      self.HEIGHT,
@@ -53,16 +54,28 @@ class NET_GUI:
                                      self.HEIGHT/2,
                                      dash=(1,1))
 
-        #create GatWay rectangul with half width gw
+        #create GatWay rectangle
         self.gatewayMAC = '00:00:00:00:00:00'
         self.gatewayIP = '10.0.0.2'
+        self.gatewayTAG = 'gateway'
         self.gateway = APGUI.GW(self.canvas,
                                 self.xOrigin,
                                 self.yOrigin+10,
                                 self.gatewayMAC,
-                                self.gatewayIP)
-        self.APIPMap[self.gatewayIP] = ('gateway', self.gatewayMAC)
-        self.APDict['gateway'] = self.gateway
+                                self.gatewayIP,
+                                self.gatewayTAG)
+        self.APIPMap[self.gatewayIP] = (self.gatewayTAG, self.gatewayMAC)
+        self.APDict[self.gatewayTAG] = self.gateway
+        #Create Select Button
+        self.selectBtn = Button(self.master, text='1: Refresh', command=self.refresh)
+        self.selectBtn.pack(side=LEFT)
+        #Create Drop-down list
+        self.apTags = StringVar(self.master)
+        self.apTags.trace('w', self.getInfo)
+        self.apDropdownMenu = OptionMenu(self.master, self.apTags, ())
+        self.apDropdownMenu.pack(side=LEFT)
+        #Create Test information display
+        self.apTextInfo = self.canvas.create_text(5,5,anchor='nw')
 	
     def monitorAP(self):
         """Listen to network for MeshPackets"""
@@ -80,7 +93,7 @@ class NET_GUI:
                 self.TOTAL+=1
     
     def addAP(self,TAG, mac, ip):
-        newAP = APGUI.AP(self.canvas, self.xOrigin, self.yOrigin, mac, ip)
+        newAP = APGUI.AP(self.canvas, self.xOrigin, self.yOrigin, mac, ip, TAG)
         self.APIPMap[ip] = (TAG, mac)
         self.APDict[TAG] = newAP
 
@@ -98,41 +111,29 @@ class NET_GUI:
 
     def test_loop(self):
         if(self.newTime == self.oldTime) :
-            self.addAP('aptest' + str(self.TOTAL))
+            self.addAP('ap1', '00:01:01:01:01:01', '10.01.1.1')
             self.TOTAL+=1
-            self.addAP('aptest' + str(self.TOTAL))
+            self.addAP('ap2', '00:02:02:02:02:02', '10.02.2.2')
             self.TOTAL+=1
         self.newTime = time.time()
         elapsed = self.newTime - self.oldTime
         #Move AP1
-        x1 = random.uniform(-1.0,1.0)
-        y1 = random.uniform(-1.0,1.0)
-        xcurr = self.APDict['aptest1'].getCenterMeters()[0]
-        ycurr = self.APDict['aptest1'].getCenterMeters()[1]
-        self.moveAP('aptest1', xcurr+x1,ycurr+y1)
+        #x1 = random.uniform(-1.0,1.0)
+        #y1 = random.uniform(-1.0,1.0)
+        #xcurr = self.APDict['aptest1'].getCenterMeters()[0]
+        #ycurr = self.APDict['aptest1'].getCenterMeters()[1]
+        #self.moveAP('aptest1', xcurr+x1,ycurr+y1)
         #Move AP2
-        x2 = random.uniform(-2.0,2.0)
-        y2 = random.uniform(-2.0,2.0)
-        xcurr = self.APDict['aptest2'].getCenterMeters()[0]
-        ycurr = self.APDict['aptest2'].getCenterMeters()[1]
-        self.moveAP('aptest2', xcurr+x2,ycurr+y2)
+        #x2 = random.uniform(-2.0,2.0)
+        #y2 = random.uniform(-2.0,2.0)
+        #xcurr = self.APDict['aptest2'].getCenterMeters()[0]
+        #ycurr = self.APDict['aptest2'].getCenterMeters()[1]
+        #self.moveAP('aptest2', xcurr+x2,ycurr+y2)
         #self.oldTime = time.time()
         #time.sleep(1)
         self.master.after(32, self.test_loop)
         
     def gui_loop(self):
-        #Do crap here
-        
-        #    self.oldTime = time.time()
-        #    mac = '00:00:' + str(self.TOTAL)
-        #    ip = '10.0.0.' + str(self.TOTAL)
-        #    newAP = APGUI.AP(self.canvas, self.xOrigin, self.yOrigin, mac, ip)
-        #    self.APDict[mac] = newAP
-        #for keys,value in self.APDict.iteritems():
-        #    x,y = value.getCenter()
-        #    newCoords = (x+1, y+1)
-        #    value.move(newCoords)
-        #    print keys + '@:' + str(self.APDict[keys].getCenter())
         self.monitorAP()
         packet = self.network.getPacket()
         if isinstance(packet, Mesh.MeshPacket):
@@ -163,8 +164,27 @@ class NET_GUI:
             
         self.master.after(32, self.gui_loop) 
 
-    def doStuff(self):
-        print 'button pressed!'
+    def refresh(self):
+        
+        menu = self.apDropdownMenu['menu']
+        menu.delete(0,'end')
+        for apTag in self.APDict.keys():
+            menu.add_command(label=apTag,
+                             command = lambda value=apTag: self.apTags.set(value))
+            self.apTags.set('')
+
+    def getInfo(self, *args):
+        tag = self.apTags.get()
+        if tag == '':
+            return
+        self.canvas.delete(self.apTextInfo)
+        self.apTextInfo = self.canvas.create_text(5,5,anchor='nw')
+        apObject = self.APDict[tag]
+        apInfoString = tag + ' Info:\n'
+        apInfoString+= 'IP  ' + apObject.getIP() + '\n'
+        apInfoString+= 'MAC ' + apObject.getMAC()
+        self.canvas.itemconfig(self.apTextInfo, text=apInfoString)
+        
 
     def exitGUI(self):
         """Start teardown"""
