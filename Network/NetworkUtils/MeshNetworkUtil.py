@@ -4,6 +4,7 @@ import traceback, os, math, re
 from time import time
 from Queue import *
 import subprocess
+import re
 
 #Priority and packet flags defined below
 PQ_DEFAULT = 10         #Default priority in queue
@@ -33,6 +34,10 @@ class MeshNetworkUtil:
     stopAP = tr.Event()     # Stops/resets AP listening thread if set
     clientPorts  = {'127.0.0.1' : 7331 }
     
+    clients      = {}       # Maps client to power level
+    lowestSignal = 0
+    lowestSignalOld = -1
+    
     # Datagram (udp) socket
     def __init__(self, debugOn = False):
         """Initialize MeshUtil object"""
@@ -61,7 +66,7 @@ class MeshNetworkUtil:
 
         # Create threading objects
         self.rxThread = tr.Thread(target=self.listenUDP)
-        self.apthread = tr.Thread(target=self.startAPMonitor)
+        self.apthread = tr.Thread(target=self.monitorAP)
  
     #now keep listening with the client
     def startListening(self):
@@ -125,6 +130,43 @@ class MeshNetworkUtil:
                 priority = PQ_EMERGCY
             self.mbox.put((priority , packet.getPacket()))
 
+    def monitorAP(self):
+        pollRate = 3
+        signalThreshold = 70
+        oldTime = newTime = time()
+        newTime += 3
+        while True:
+            #Poll client poer every pollRate seconds
+            elapsed = newTime - oldTime
+            if elapsed < pollRate:
+                continue
+            oldTime = time()
+            #Grab iwTable shell command output
+            iwList = self.iwTable.split()
+            #Move previous lowest signal to old
+            self.lowestSignalOld = self.lowestSignal
+            if len(iwList) == 0:
+                #No clients connected, no signal then
+                self.lowestSignal = 0
+                continue
+            #Regex for MAC addresses
+            macRegEx = re.compile('\d\d\:\d\d:\d\d:\d\d:\d\d:\d\d')
+            #Get all instances of MAC on AP
+            macList = macRegEx.finadall(iwTable)
+            index = 1
+            for mac in macList:
+                signal = abs(int(iwList[27*index]))
+                self.clients[mac] = signal
+                if signal >= signalThreshold and signal > self.lowestSignalOld:
+                    #current signal is lowest thus far
+                    self.lowestSignalOld = self.lowestSignal
+                    self.lowestSignal = signal
+
+    def getLowestSignal(self):
+        if self.apThread.isAlive():
+            return slef.lowestSignal
+        return None 
+
     
     def getData(self):
         """Dequeues the next element sent to host"""
@@ -136,10 +178,6 @@ class MeshNetworkUtil:
         if self.debug:
             print  '    getData() -> ' + data
         return data
-        #except :
-        #    if self.debug:
-        #        print  '    Queue empty'
-        #    return None
 
 
     def getPacket(self):
@@ -161,6 +199,12 @@ class MeshNetworkUtil:
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
         return arpShell.communicate()[0]
+
+    def iwTable(self):
+        iwShell = subprocess.Popen(["iw","dev", "wlan1", "station", "dump"],
+                                                stdout=subprocess.PIPE,
+                                                stderr=subprocess.PIPE)
+        return iwShell..communicate()[0]
 
 
     def arpIP(self, ipaddr):
