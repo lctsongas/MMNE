@@ -17,7 +17,7 @@ import MeshNetworkUtil as Mesh
 
 network = Mesh.MeshNetworkUtil()
 network.startListening()
-network.startAPMonitor()
+#network.startAPMonitor()
 # imu = classes.IMU_Operations()
 bno = BNO055.BNO055(serial_port='/dev/ttyAMA0', rst=18)
 # if not bno.begin():
