@@ -35,7 +35,7 @@ isgetGPSorigin = False  # no GPS origin stored when program starts.  Origin is s
 isIMUaccelused = False  # collect data with IMU
 
 saveName = 'RobotMovementData.txt'  # name of file to save movement data to
-min_distance_correction = 3  # stop robot if within 2 (encoderData.py sets distance measurement type: feet, meters)
+min_distance_correction = 0.2  # stop robot if within 2 (encoderData.py sets distance measurement type: feet, meters)
 fullstopturn = 6  # how many degrees away from bearing will a full stop turn be performed. Smaller than this transitions to new turn
 min_angle_correction = 2  # how many degrees away from bearing to use a gradual turn.  Smaller than this and go straight
 pwm1 = 240  # set pulse width modulation for each motor
