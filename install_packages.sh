@@ -79,7 +79,7 @@ sudo python setup.py install
 echo "[GIT] ADC Sensor Done!"
 
 echo "[GIT] Motor HAT"
-MHAT_Path="$GIT_HOME/Motor_HAT"
+MHAT_Path="$GIT_HOME"
 cd $MHAT_Path
 git clone https://github.com/adafruit/Adafruit-Motor-HAT-Python-Library.git
 cd "$MHAT_Path/Adafruit-Motor-HAT-Python-Library"
@@ -88,11 +88,10 @@ echo "[GIT] Motor HAT Done!"
 
 echo "[GIT] HSMM-Pi"
 HSMM_Path="$GIT_HOME"
-mkdir $HSMM_Path
 cd $HSMM_Path
 git clone https://github.com/urlgrey/hsmm-pi.git
 cd "$HSMM_Path/hsmm-pi"
-sudo runuser -l pi -c "$HSMM_Path/install.sh"
+sudo runuser -l pi -c "./install.sh"
 echo "[GIT] HSMM-Pi Done!"
 
 #All git files downloaded successfully
@@ -103,10 +102,6 @@ sudo systemctl stop gpsd.socket
 sudo systemctl disable gpsd.socket
 sudo gpsd /dev/ttyUSB0 -F /var/run/gpsd.sock
 echo "[GET] GPS Done!"
-
-echo "[GET] Hostapd"
-sudo apt-get install hostapd
-echo "[GET] Hostapd done!"
 
 #Begin setting up UART and stopping bluetooth
 echo "[BOOT] Modifying boot files"
