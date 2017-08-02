@@ -5,8 +5,8 @@ from Queue import Queue, LifoQueue
 
 
 
-#wheel_size = .205 #wheel circumference in meters (meters/rotation)
-wheel_size = .6726 #wheel circumference in feet (feet/rotation)
+wheel_size = .205 #wheel circumference in meters (meters/rotation)
+#wheel_size = .6726 #wheel circumference in feet (feet/rotation)
 
 def adcGetData(adc0q,adc1q,adc2q,adc3q,adcGetDataFlag):
     #print 'ADC STARTED'
@@ -84,7 +84,7 @@ def TickAdd_AvgDistance(distanceQ,adc0q,adc1q,adc2q,adc3q,TickAdd_AvgDistanceFla
                 # change values to 0 if above 1000 and to 1 if below 1000
                 # above 1000 indicates a gap and below 1000 is a spoke
                 # Count is set to 1 to show a transition from spoke to gap
-                    if values[i] > 1000:
+                    if values[i] > 20000:
                         values[i] = 0
                         if count[i] == 1:
                             count[i] = 0
