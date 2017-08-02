@@ -13,6 +13,6 @@ if __name__ == '__main__':
     app = NET_GUI(root, WIDTH, HEIGHT)
     #app = GUI(root, sys.argv[1], sys.argv[2])
     app.master.title('NETWORK GRAPHICAL INTERFACE')
-    app.master.after(0, app.test_loop) #Run ~30FPS (Wich we could do 60... PCMR)
+    app.master.after(0, app.gui_loop) #Run ~30FPS (Wich we could do 60... PCMR)
     root.mainloop()
     

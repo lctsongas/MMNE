@@ -37,8 +37,8 @@ class AP:
                                                 fill=self.apColor,
                                                 tags=(self.TAG,))
         
-        self.apText = self.canvas.create_text(self.drawXPos-self.RADIUS,
-                                              self.drawYPos-self.RADIUS,
+        self.apText = self.canvas.create_text(self.drawXPos-(2*self.RADIUS),
+                                              self.drawYPos-(3*self.RADIUS),
                                               text = self.TAG,
                                               anchor = 'nw')
 
@@ -65,6 +65,7 @@ class AP:
 
     def move(self, coordsInMeters):
         """update x,y stuff with new coords in meters"""
+        print 'AP.Move called: ' + str(coordsInMeters)
         xInPixels,yInPixels = meters2pixels(coordsInMeters)
         
         deltaX = xInPixels - self.xPos
@@ -75,15 +76,18 @@ class AP:
         
         self.drawXPos = self.drawXPos + deltaX
         self.drawYPos = self.drawYPos + deltaY
-        self.canvas.move(self.macAddr, deltaX, deltaY)
-
+        self.canvas.move(self.TAG, deltaX, deltaY)
+        self.canvas.delete(self.apText)
+        self.apText = self.canvas.create_text(self.drawXPos-(2*self.RADIUS),
+                                              self.drawYPos-(3*self.RADIUS),
+                                              text = self.TAG,
+                                              anchor = 'nw')
+        
     def getIP(self):
         return self.IP
 
     def getMAC(self):
         return self.macAddr
-        
-
 
 
 class GW(AP):
@@ -91,7 +95,6 @@ class GW(AP):
     LENGTH = 5
     gwColor = 'green'
     
-        
 
 
     def draw(self):
