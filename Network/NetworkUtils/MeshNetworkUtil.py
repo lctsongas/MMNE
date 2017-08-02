@@ -86,13 +86,15 @@ class MeshNetworkUtil:
             self.stopRx.set()
             self.rxThread = tr.Thread(target=self.listenUDP)
 
-    def sendPacket(self, data, dest, msgType = 1, flags = FG_NONE):
+    def sendPacket(self, data, dest, msgType = 1, flags = FG_NONE, server = False):
         """sends UDP packet to broadcast"""
         if self.debug:
             print  '    sendData( data = ' + data + ', host = ' + dest + ' )'
         # Setup UDP packet contents
         packet = MeshPacket()
         packet.encode(dest, data, msgType, flags)
+        if server:
+            packet.setSrcAddress('10.0.0.1')
         try :
             #Set the whole string
             self.socketUDP.sendto(packet.getPacket(), (dest, self.PORT))
@@ -109,7 +111,7 @@ class MeshNetworkUtil:
             d = self.socketUDP.recvfrom(20480)
             packet = MeshPacket()
             packet.decode(d[0])
-            print 'MeshUtil: got something!'
+            #print 'MeshUtil: got something!'
             if self.debug:
                 print  '    time: ' + str(packet.timestamp())
                 print  '    address: ' + packet.address()
@@ -120,8 +122,6 @@ class MeshNetworkUtil:
             priority = PQ_DEFAULT # Set default priority
             if packet.flags() == FG_YOUSTOP or packet.flags() == FG_ALLSTOP:
                 #Emergency stop priority set
-                priority = PQ_EMERGCY
-            elif packet.flags() == FG_TOOFAR:
                 priority = PQ_EMERGCY
             self.mbox.put((priority , packet.getPacket()))
 
@@ -142,7 +142,6 @@ class MeshNetworkUtil:
         #    return None
 
 
-
     def getPacket(self):
         """Dequeues a packet object if it exists"""
         try :
@@ -159,9 +158,10 @@ class MeshNetworkUtil:
 
     def arpTable(self):
         arpShell = subprocess.Popen(["arp","-a"],
-                                                 stdout=subprocess.PIPE,
-                                                 stderr=subprocess.PIPE)
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
         return arpShell.communicate()[0]
+
 
     def arpIP(self, ipaddr):
         arptable = self.arpTable()
@@ -193,10 +193,6 @@ class MeshNetworkUtil:
             if foundmac != None and foundip != None:
                     retDict[foundip.group(0)] = foundmac.group(0)
         return retDict
-
-    def checkSignals(self, iwData):
-        """Only called every 5 seconds"""
-        return None
 
     def meshPortMap(self):
         for key in self.clientPorts:
@@ -237,7 +233,7 @@ class MeshNetworkUtil:
     # Move to  : S2A, x,y to go to
     def sendMoveTo(self, dest, x, y):
         data = str(x) + ', ' + str(y)
-        self.sendPacket(data, dest, flags=FG_MOVETO)
+        self.sendPacket(data, dest, flags=FG_MOVETO, server=True)
         
     #See top of class for info
     # Moving   : A2S, also sends current x,y and dest x,y
@@ -250,28 +246,27 @@ class MeshNetworkUtil:
     #See top of class for info
     # Poll x,y : S2A, ask AP for his current location
     def pollCoords(self, dest):
-        self.sendPacket('', dest, flags=FG_WHEREUAT)
+        self.sendPacket('', dest, flags=FG_WHEREUAT, server=True)
         
     #See top of class for info
     # AP far   : S2A, Stops AP so it doesn't go out of range
     def stopAPTooFar(self, dest):
-        self.sendPacket('',dest,flags=FG_TOOFAR)
+        self.sendPacket('',dest,flags=FG_TOOFAR, server=True)
 
     #See top of class for info
     # Ask help : A2A & A2S, Asks other nodes for help extending coverage
-    def askHelp(self,xcurrent,ycurrent):
-        data = str(x) + ', ' + str(y)
-        self.sendPacket(data,'<broadcast>',flags=FG_ALLSTOP)
+    def askHelp(self):
+        self.sendPacket('','<broadcast>',flags=FG_ALLSTOP)
         
     #See top of class for info
     # Stop move: S2A, Halts single robot from moving
     def stopAPNow(self, dest):
-        self.sendPacket('',dest,flags=FG_YOUSTOP)
+        self.sendPacket('',dest,flags=FG_YOUSTOP, server=True)
         
     #See top of class for info
     # Stop move: S2A, Halts all robots form moving
     def stopAPAll(self):
-        self.sendPacket('','<broadcast>',flags=FG_ALLSTOP)
+        self.sendPacket('','<broadcast>',flags=FG_ALLSTOP, server=True)
 
     
 
@@ -355,6 +350,13 @@ class MeshPacket:
         ipAddr += "."
         ipAddr += str(self.header[3])
         return ipAddr
+
+    def setSrcAddress(self,ip):
+        ipBytes = ip.split('.')
+        self.header[0] = int(ipBytes[0])
+        self.header[1] = int(ipBytes[1])
+        self.header[2] = int(ipBytes[2])
+        self.header[3] = int(ipBytes[3])
     
     def address(self):
         """Return UDP dest. address."""
