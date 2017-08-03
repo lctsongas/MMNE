@@ -1,8 +1,8 @@
 from Tkinter import *
 
-                    # 1 meter = 2 
-PX2M = 0.5          # Pixels to meters scalar
-M2PX = 1/PX2M       # Meters to pixels scalar
+                    # 1 meter = 10 px 
+PX2M = 1.0/10.0         # Pixels to meters scalar
+M2PX = 1.0/PX2M       # Meters to pixels scalar
 
 def meters2pixels(coordsInMeters):
         return (int(coordsInMeters[0]*M2PX), int(coordsInMeters[1]*M2PX))
@@ -13,7 +13,11 @@ def pixels2meters(coordsInPixels):
 
 class AP:
     RADIUS = 5          # Circle radius
-    apColor = 'red'
+    apSelected = 'yellow'
+    apActive = 'green'
+    apBad = 'red'
+    apColor = apBad
+    apOutline = 'white'
     
     def __init__(self,canvas,xOrigin,yOrigin,mac,ip,tag):
         """Init AP to (0,0)"""
@@ -35,12 +39,15 @@ class AP:
                                                 self.drawXPos+self.RADIUS,
                                                 self.drawYPos+self.RADIUS,
                                                 fill=self.apColor,
+                                                outline=self.apOutline,
                                                 tags=(self.TAG,))
         
         self.apText = self.canvas.create_text(self.drawXPos-(2*self.RADIUS),
                                               self.drawYPos-(3*self.RADIUS),
                                               text = self.TAG,
-                                              anchor = 'nw')
+                                              fill='white',
+                                              anchor = 'nw',
+                                              tags=(self.TAG,))
 
 
     def getCenter(self):
@@ -67,7 +74,7 @@ class AP:
         """update x,y stuff with new coords in meters"""
         print 'AP.Move called: ' + str(coordsInMeters)
         xInPixels,yInPixels = meters2pixels(coordsInMeters)
-        
+        yInPixels = -yInPixels # Flip horizontally
         deltaX = xInPixels - self.xPos
         deltaY = yInPixels - self.yPos
         
@@ -81,7 +88,14 @@ class AP:
         self.apText = self.canvas.create_text(self.drawXPos-(2*self.RADIUS),
                                               self.drawYPos-(3*self.RADIUS),
                                               text = self.TAG,
-                                              anchor = 'nw')
+                                              fill='white',
+                                              anchor = 'nw',
+                                              tags=(self.TAG,))
+
+    def update(self):
+        self.canvas.delete(self.apCircle)
+        self.canvas.delete(self.apText)
+        self.draw()
         
     def getIP(self):
         return self.IP
@@ -89,6 +103,14 @@ class AP:
     def getMAC(self):
         return self.macAddr
 
+    def setOK(self):
+        self.apColor = self.apActive
+
+    def setSelected(self):
+        self.apColor = self.apSelected
+
+    def setBad(self):
+        self.apColor = self.apBad
 
 class GW(AP):
     
@@ -102,7 +124,30 @@ class GW(AP):
                                                    self.drawYPos-self.LENGTH,
                                                    self.drawXPos+self.LENGTH,
                                                    self.drawYPos+self.LENGTH,
-                                                   fill=self.gwColor)
+                                                   fill=self.gwColor,
+                                                   tags=(self.TAG,))
+
+    def move(self, coordsInMeters):
+        """update x,y stuff with new coords in meters"""
+        print 'GW.Move called: ' + str(coordsInMeters)
+        xInPixels,yInPixels = meters2pixels(coordsInMeters)
+        yInPixels = -yInPixels # Flip horizontally
+        deltaX = xInPixels - self.xPos
+        deltaY = yInPixels - self.yPos
+        
+        self.xPos = self.xPos + deltaX
+        self.yPos = self.yPos + deltaY
+        
+        self.drawXPos = self.drawXPos + deltaX
+        self.drawYPos = self.drawYPos + deltaY
+        self.canvas.move(self.TAG, deltaX, deltaY)
+
+    def update(self):
+        self.canvas.delete(self.gwRect)
+        self.draw()
+
+
+        
                                                    
         
         

@@ -1,4 +1,5 @@
 from Tkinter import *
+from PIL import Image, ImageTk
 import tkMessageBox
 import time
 import math
@@ -13,8 +14,8 @@ apnum = 0
 class NET_GUI:
     INTERVAL = 2
     TOTAL = 1
-    APDict = {}
-    APIPMap = {}
+    APDict = {} #AP_TAG : AP OBJECT
+    APIPMap = {} # AP_IP : (AP_TAG, AP_MAP)
     
     def __init__(self,master, winWidth, winHeight):
         self.master = master
@@ -32,39 +33,45 @@ class NET_GUI:
 
         self.network = Mesh.MeshNetworkUtil()
         self.network.startListening()
+        self.network.startArping()
         #self.status = Frame(self.master)
         
 
     def createWidgets(self):
-	"""Build GUI"""
-	self.canvas = Canvas(self.master,
-                            width=self.WIDTH,
-                            height=self.HEIGHT,
-                            bg='white')
+        """Build GUI"""
+        self.canvas = Canvas(self.master,
+                             width=self.WIDTH,
+                             height=self.HEIGHT,
+                             bg='white')
+        self.canvas.pack(expand=YES)
+        self.image = ImageTk.PhotoImage(file='background.png')
+        self.canvas.create_image(0,0, anchor = NW, image = self.image)
         
-        self.canvas.pack(side=BOTTOM)
         #create x,y coordinants(moves in pixles)
         self.canvas.create_line(self.WIDTH/2,0,
-                                     self.WIDTH/2,
-                                     self.HEIGHT,
-                                     dash=(1,1))
+                                self.WIDTH/2,
+                                self.HEIGHT,
+                                fill='white',
+                                dash=(5,1))
         self.canvas.create_line(0,self.HEIGHT/2,
-                                     self.WIDTH,
-                                     self.HEIGHT/2,
-                                     dash=(1,1))
+                                self.WIDTH,
+                                self.HEIGHT/2,
+                                fill='white',
+                                dash=(5,1))
 
         #create GatWay rectangul with half width gw
         self.gatewayMAC = '20:0c:c8:01:c5:37'
         self.gatewayIP = '10.0.0.1'
-        self.gatewayTAG = 'gateway'
-        self.gateway = APGUI.GW(self.canvas,
-                                self.xOrigin,
-                                self.yOrigin+10,
-                                self.gatewayMAC,
-                                self.gatewayIP,
-                                self.gatewayTAG)
+        self.gatewayTAG = 'GW'
+        gateway = APGUI.GW(self.canvas,
+                           self.xOrigin,
+                           self.yOrigin+10,
+                           self.gatewayMAC,
+                           self.gatewayIP,
+                           self.gatewayTAG)
+        
         self.APIPMap[self.gatewayIP] = (self.gatewayTAG, self.gatewayMAC)
-        self.APDict[self.gatewayTAG] = self.gateway
+        self.APDict[self.gatewayTAG] = gateway
         #Create Select Button
         self.selectBtn = Button(self.master,
                                 text='1: Refresh',
@@ -107,18 +114,21 @@ class NET_GUI:
 	
     def monitorAP(self):
         """Listen to network for MeshPackets"""
-        arpTable = self.network.getArpAndIP()
-        #print 'Monitoring'
+        #print 'network called'
+        arpTable = self.network.getArpDict()
+        if arpTable == None:
+            return
+        #print 'network returned'
         for arpIP in arpTable:
-            #for IPKeys in self.APIPMap:
-            #print 'Checking'
+            #print 'for loop iteration'
             if not arpIP in self.APIPMap:
-                    
-                apTAG = 'AP' + str(self.TOTAL)
+                splitIP = arpIP.split('.')
+                apTAG = 'AP' + str(splitIP[3])
                 print 'New Node: ' + apTAG
                 print arpIP + '->' + arpTable[arpIP]
                 self.addAP(apTAG, arpTable[arpIP], arpIP)
                 self.TOTAL+=1
+        #print 'monitorAP done'
     
     def addAP(self,TAG, mac, ip):
         newAP = APGUI.AP(self.canvas, self.xOrigin, self.yOrigin, mac, ip, TAG)
@@ -151,6 +161,11 @@ class NET_GUI:
         
     def gui_loop(self):
         self.monitorAP()
+        #self.newTime = time.time()
+        #elapsed = self.newTime - self.oldTime
+        #if elapsed > 5:
+            #self.monitorAP()
+            #self.oldTime = time.time()
         packet = self.network.getPacket()
         if isinstance(packet, Mesh.MeshPacket):
             #Do processing stuff
@@ -160,19 +175,24 @@ class NET_GUI:
                 print 'UNDEFINED PACKET RECIEVED FROM ' + packet.srcAddress()
             elif flag == Mesh.FG_OKAY:
                 # OK       : A2S, ready and waiting
-                #print 'ALL IS GOUDA RECEIVED FROM ' + packet.srcAddress()
-                break
+                print 'ALL IS GOUDA RECEIVED FROM ' + packet.srcAddress()
+                apTag = self.APIPMap[packet.srcAddress()]
+                self.APDict[apTag[0]].setOK()
+                self.APDict[apTag[0]].update()
             elif flag == Mesh.FG_LOWPWR:
                 # Low Power: A2S, losing client signal, AP running low pwr subroutine
                 print 'LOW POWER CLIENT RECEIVED FROM ' + packet.srcAddress()
             elif flag == Mesh.FG_MOVING:
+                apTag = self.APIPMap[packet.srcAddress()]
+                self.APDict[apTag[0]].setOK()
+                self.APDict[apTag[0]].update()
                 print 'CLIENT MOVING ' + packet.srcAddress()
                 # Moving   : A2S, also sends current x,y and dest x,y
                 data = packet.getPayload()
                 #print 'DATA: ' + data
                 dataList = data.split(',')
-                newX = int(float(dataList[0]))
-                newY = int(float(dataList[1]))
+                newX = int(round(float(dataList[0])))
+                newY = int(round(float(dataList[1])))
                 #print 'X,Y: ' + str(newX) + ', ' + str(newY)
                 #print data + '-> (' + str(newX) + ', ' + str(newY) + ')'
                 self.moveAP(packet.srcAddress(), newX, newY)
@@ -193,8 +213,8 @@ class NET_GUI:
             self.apTags.set('')
 
     def sendCommand(self):
-        apName = self.apTags.get()
-        if apName == self.gatewayTAG or apName == '':
+        apName = self.apTags.get()                
+        if apName == '':
             return
         ap = self.APDict[apName]
         xCoord = self.apXCoord.get()
@@ -207,7 +227,10 @@ class NET_GUI:
             try:
                 x = int(xCoord)
                 y = int(yCoord)
-                self.network.sendMoveTo(ip,x,y)
+                if apName == self.gatewayTAG:
+                    self.moveAP(self.gatewayIP, x, y)
+                else:
+                    self.network.sendMoveTo(ip,x,y)
             except ValueError:
                 return 
         elif option == 'Where are you?':
@@ -224,12 +247,21 @@ class NET_GUI:
         if tag == '':
             return
         self.canvas.delete(self.apTextInfo)
+        self.apTextBg = self.canvas.create_rectangle(3,3,150,50, fill='white')
         self.apTextInfo = self.canvas.create_text(5,5,anchor='nw')
+        for otherApTags in self.APDict.keys():
+            if otherApTags == tag:
+                continue
+            self.APDict[otherApTags].setBad()
+            self.APDict[otherApTags].draw()
         apObject = self.APDict[tag]
+        apObject.setSelected()
+        apObject.update()
         apInfoString = tag + ' Info:\n'
         apInfoString+= 'IP  ' + apObject.getIP() + '\n'
         apInfoString+= 'MAC ' + apObject.getMAC()
         self.canvas.itemconfig(self.apTextInfo, text=apInfoString)
+        
 
     def exitGUI(self):
         """Start teardown"""
