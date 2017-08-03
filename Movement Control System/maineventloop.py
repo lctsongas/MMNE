@@ -28,16 +28,16 @@ motor = classes.Motor_Operations()
 
 isSave = True #save position data to text file
 isdestination = False #currently no destination set, reads True if destination set
-isEncoderused = False #Is the encoder used to track distance while the robot is moving
+isEncoderused = True #Is the encoder used to track distance while the robot is moving
 ismovingforward = False #Is the robot moving forward? at start of loop it is not moving at all
 ismoving = False #The robot is not moving at all (including turning) when the program starts
 isclockwise = False #Just an initialization here.  Value is not evaulated until after isdestination = True during runtime
 isGPSused = True #Record GPS measurements
 isgetGPSorigin = False #no GPS origin stored when program starts.  Origin is saved then set to True
-isIMUaccelused = True #collect data with IMU
+isIMUaccelused = False #collect data with IMU
 
 saveName = 'RobotMovementData.txt' #name of file to save movement data to
-min_distance_correction = 0.2 #stop robot if within 2 (encoderData.py sets distance measurement type: feet, meters)
+min_distance_correction = 0.5 #stop robot if within 2 (encoderData.py sets distance measurement type: feet, meters)
 fullstopturn = 6 #how many degrees away from bearing will a full stop turn be performed. Smaller than this transitions to new turn
 min_angle_correction = 2 #how many degrees away from bearing to use a gradual turn.  Smaller than this and go straight
 pwm1 = 240 #set pulse width modulation for each motor
@@ -54,6 +54,8 @@ time_stamp = 0.0 #time stamp each of the recordings
 read_time = 0.0 #read GPS data delay
 report_time = 0.0 #used in debuging to report various items to console
 
+newTime = oldTime = time.time()
+
 #initialize gps variables
 lat = lon = lat_origin = lon_origin = xgps = ygps = 0.0
 
@@ -65,6 +67,7 @@ dist_togo = bearing = angle_diff = 0.0
 #initialize encoder variables
 xallincrements = yallincrements = 0.0 #used for encoder incremental distance calculation
 pastdistance = 0.0 #used for encoder incremental distance calculation
+
 
 #create Events
 adcGetDataFlag = threading.Event()
@@ -151,14 +154,14 @@ def distanceAccel():
             #print('vlist' + str(vlist))
             if len(dlist) == 3:
                 if ismovingforward:
-                    print 'moving forward'
+                    #print 'moving forward'
                     total_distance = total_distance + dlist[0]
             #acceldistanceQ.put(total_distance)
             #print('(6): ********Accel Distance',total_distance)
             #print('dlist' + str(dlist))
                     distanceQ.put(total_distance)
-                    print'######################'
-                    print 'distanceQ is : ' + str(total_distance)
+                    #print'######################'
+                    #print 'distanceQ is : ' + str(total_distance)
 if isIMUaccelused:
     distanceAccelThread = threading.Thread(target = distanceAccel,args=()).start()
 
@@ -268,7 +271,7 @@ while True:
         gyro = gyroQ.get()
         accel = accelQ.get()
         mag = magQ.get()
-        # Print everything out.
+        #Print everything out.
         if report_time > 5:
             print('Heading={0:0.2F}\tSys_cal={1} Gyro_cal={2} Accel_cal={3} Mag_cal={4}'.format(
               heading, sys, gyro, accel, mag))
@@ -277,7 +280,7 @@ while True:
 
     #if isdestination = false then get a destination from user
     if not isdestination and run_time > 20:
-        print('****** Get Destination *******')
+        #print('****** Get Destination *******')
         xypositionFlag.set() #reset distance calculations
         while not distanceQ.empty():
             junk = distanceQ.get()
@@ -313,15 +316,19 @@ while True:
         accel = accelQ.get()
         mag = magQ.get()
         # Print everything out.
-        print('Heading={0:0.2F}\tSys_cal={1} Gyro_cal={2} Accel_cal={3} Mag_cal={4}'.format(
-          heading, sys, gyro, accel, mag))
+        #print('Heading={0:0.2F}\tSys_cal={1} Gyro_cal={2} Accel_cal={3} Mag_cal={4}'.format(
+          #heading, sys, gyro, accel, mag))
         
         #################
         
     
         packet = network.getPacket()
         if packet == None:
-            network.sendOK()
+            newTime = time.time()
+            elapsed = newTime - oldTime
+            if elapsed > 5:
+                network.sendOK()
+                oldTime = time.time()
         else:
             flag = packet.flags()
             print 'Packet recieved!'
@@ -360,7 +367,9 @@ while True:
                 isturning = False
                 isdestination = False
                 ismovingforward = False
-                motor_op.gradstop(pwm1, pwm2, pwm3, pwm4)
+                #motor_op.gradstop(pwm1, pwm2, pwm3, pwm4)
+                motor.allstop()
+                network.printPacket(packet)
                 xallincrements = 0.0
                 yallincrements = 0.0
                 pastdistance = 0.0
@@ -468,7 +477,9 @@ while True:
     if not xcurrentQ.empty() and not ycurrentQ.empty():
         xcurrent = xcurrentQ.get()
         ycurrent = ycurrentQ.get()
-        network.sendCoords(xcurrent, ycurrent, xdestination, ydestination)
+        xabsolute = xcurrent + xtranslation
+        yabsolute = ycurrent +ytranslation
+        network.sendCoords(xabsolute, yabsolute, xdestination, ydestination)
         #xcurrentQ = LifoQueue()
         #ycurrentQ = LifoQueue()
         #print('getting xycurrent from queue',xcurrent,ycurrent)
