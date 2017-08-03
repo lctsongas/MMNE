@@ -81,9 +81,11 @@ class NET_GUI:
         #Create AP Options Dropdown List
         self.apOptions = StringVar(self.master)
         self.apOptionMenu = OptionMenu(self.master,
-                                         self.apOptions,
-                                         'AP Move to:',
-                                         'Where are you?')
+                                       self.apOptions,
+                                       'AP Move to:',
+                                       'Where are you?',
+                                       'Stop Moving',
+                                       'ALL STOP')
         self.apOptionMenu.config(width=12)
         self.apOptionMenu.pack(side=LEFT)
         #Create x and y textbox
@@ -198,19 +200,22 @@ class NET_GUI:
         xCoord = self.apXCoord.get()
         yCoord = self.apYCoord.get()
         option = self.apOptions.get()
+        ip = ap.getIP()
         if option == 'AP Move to:':
             if xCoord == '' or yCoord == '':
                 return
             try:
                 x = int(xCoord)
                 y = int(yCoord)
-                ip = ap.getIP()
                 self.network.sendMoveTo(ip,x,y)
             except ValueError:
                 return 
         elif option == 'Where are you?':
-            ip = ap.getIP()
             self.network.pollCoords(ip)
+        elif option == 'Stop Moving':
+            self.network.stopAPNow(ip)
+        elif option == 'ALL STOP':
+            self.network.stopAPAll()
         else:
             return
 
