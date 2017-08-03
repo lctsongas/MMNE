@@ -245,9 +245,9 @@ class MeshNetworkUtil:
     def printPacket(self, packet):
         retval  = 'Source IP: ' + packet.srcAddress() + '\n'
         retval += '  Dest IP: ' + packet.address() + '\n'
-        retval += '  MsgType: ' + packet.messageType() + '\n'
-        retval += '    Flags: ' + packet.flags() + '\n'
-        retval += 'Timestamp: ' + packet.timestamp() + '\n'
+        retval += '  MsgType: ' + str(packet.messageType()) + '\n'
+        retval += '    Flags: ' + str(packet.flags()) + '\n'
+        retval += 'Timestamp: ' + str(packet.timestamp()) + '\n'
         retval += '     Data: ' + packet.getPayload()
         return retval
 
