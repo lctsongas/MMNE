@@ -32,9 +32,11 @@ class MeshNetworkUtil:
     debug        = False    # Debugging off (default) / on
     stopRx = tr.Event()     # Stops/resets packet receiving thread if set
     stopAP = tr.Event()     # Stops/resets AP listening thread if set
+    stopArp= tr.Event()     # Stops/resets AP
     clientPorts  = {'127.0.0.1' : 7331 }
     
     clients      = {}       # Maps client to power level
+    arpDict = None
     lowestSignal = 0
     lowestSignalOld = -1
     
@@ -66,7 +68,8 @@ class MeshNetworkUtil:
 
         # Create threading objects
         self.rxThread = tr.Thread(target=self.listenUDP)
-        self.apthread = tr.Thread(target=self.monitorAP)
+        self.apThread = tr.Thread(target=self.monitorAP)
+        self.arpThread= tr.Thread(target=self.getArpAndIP)
  
     #now keep listening with the client
     def startListening(self):
@@ -80,6 +83,11 @@ class MeshNetworkUtil:
         if not self.apThread.isAlive():
             self.stopAP.clear()
             self.apThread.start()
+
+    def startArping(self):
+        if not self.arpThread.isAlive():
+            self.stopArp.clear()
+            self.arpThread.start()
             
     def close(self):
         """Stop the MeshUtil"""
@@ -131,18 +139,20 @@ class MeshNetworkUtil:
             self.mbox.put((priority , packet.getPacket()))
 
     def monitorAP(self):
-        pollRate = 3
+        pollRate = 5
         signalThreshold = 70
-        oldTime = newTime = time()
-        newTime += 3
+        oldTime = time()
         while True:
             #Poll client poer every pollRate seconds
+            newTime = time()
             elapsed = newTime - oldTime
             if elapsed < pollRate:
                 continue
+            print 'monitor top o loop'
             oldTime = time()
             #Grab iwTable shell command output
-            iwList = self.iwTable.split()
+            iwDump = self.iwTable()
+            iwList = iwDump.split()
             #Move previous lowest signal to old
             self.lowestSignalOld = self.lowestSignal
             if len(iwList) == 0:
@@ -152,7 +162,7 @@ class MeshNetworkUtil:
             #Regex for MAC addresses
             macRegEx = re.compile('\d\d\:\d\d:\d\d:\d\d:\d\d:\d\d')
             #Get all instances of MAC on AP
-            macList = macRegEx.finadall(iwTable)
+            macList = macRegEx.finadall(iwDump)
             index = 1
             for mac in macList:
                 signal = abs(int(iwList[27*index]))
@@ -164,7 +174,7 @@ class MeshNetworkUtil:
 
     def getLowestSignal(self):
         if self.apThread.isAlive():
-            return slef.lowestSignal
+            return self.lowestSignal
         return None 
 
     
@@ -195,17 +205,14 @@ class MeshNetworkUtil:
             return None
 
     def arpTable(self):
-        arpShell = subprocess.Popen(["arp","-a"],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
-        return arpShell.communicate()[0]
+        return subprocess.check_output(["arp","-a"])
 
     def iwTable(self):
-        iwShell = subprocess.Popen(["iw","dev", "wlan1", "station", "dump"],
-                                                stdout=subprocess.PIPE,
-                                                stderr=subprocess.PIPE)
-        return iwShell..communicate()[0]
-
+        #iwShell = subprocess.Popen(["iw","dev", "wlan1", "station", "dump"],
+        #                                        stdout=subprocess.PIPE,
+        #                                        stderr=subprocess.PIPE)
+        #return iwShell.communicate()[0]
+        return subprocess.check_output(['iw', 'dev', 'wlan1', 'station', 'dump'])
 
     def arpIP(self, ipaddr):
         arptable = self.arpTable()
@@ -226,17 +233,25 @@ class MeshNetworkUtil:
         return None
 
     def getArpAndIP(self):
-        arptable = self.arpTable()
-        arplist = arptable.split('\n')
-        retDict = {}
-        for line in arplist:
-            if line == None:
-                continue
-            foundip = re.search('\d+\.\d+\.\d+\.\d+', line)
-            foundmac = re.search('..:..:..:..:..:..',line)
-            if foundmac != None and foundip != None:
-                    retDict[foundip.group(0)] = foundmac.group(0)
-        return retDict
+        while True:
+            arptable = self.arpTable()
+            arplist = arptable.split('\n')
+            retDict = {}
+            for line in arplist:
+                #print 'arp table iteration'
+                if line == None:
+                    continue
+                #print 'arp searching'
+                foundip = re.search('\d+\.\d+\.\d+\.\d+', line)
+                foundmac = re.search('..:..:..:..:..:..',line)
+                #print 'arp search done'
+                if foundmac != None and foundip != None:
+                        retDict[foundip.group(0)] = foundmac.group(0)
+            #print 'arp done'
+            self.arpDict = retDict
+
+    def getArpDict(self):
+        return self.arpDict
 
     def meshPortMap(self):
         for key in self.clientPorts:
@@ -245,9 +260,9 @@ class MeshNetworkUtil:
     def printPacket(self, packet):
         retval  = 'Source IP: ' + packet.srcAddress() + '\n'
         retval += '  Dest IP: ' + packet.address() + '\n'
-        retval += '  MsgType: ' + str(packet.messageType()) + '\n'
-        retval += '    Flags: ' + str(packet.flags()) + '\n'
-        retval += 'Timestamp: ' + str(packet.timestamp()) + '\n'
+        retval += '  MsgType: ' + packet.messageType() + '\n'
+        retval += '    Flags: ' + packet.flags() + '\n'
+        retval += 'Timestamp: ' + packet.timestamp() + '\n'
         retval += '     Data: ' + packet.getPayload()
         return retval
 

@@ -7,7 +7,7 @@ import time, datetime
 
 server = MeshNetworkUtil()
 server.startListening()
-
+server.startAPMonitor()
 def getChoice(text):
     choice = raw_input(text)
     if choice == 'y' or choice == 'Y' or choice == 'yes' or choice == 'Yes':
@@ -62,13 +62,16 @@ def sendMessage():
         options[num][1](ip)
     elif num == 10: # Stop all APs
         options[num][1]()
+    else:
+        print 'Unknown option'
     
 
 def getInfo():
     print ''
     options = {1 : ('Arp Table',server.arpTable),
                2 : ('Who is (arp)',server.arpIP),
-               3 : ('Arp and IP map', server.getArpAndIP)
+               3 : ('Arp and IP map', server.getArpAndIP),
+               4 : ('Get lowest signal', server.getLowestSignal)
     }
     for option in options:
         print str(option) + ' = ' + options[option][0]
@@ -80,7 +83,10 @@ def getInfo():
         print options[num][1](ip)
     elif num == 3: # map ip to mac
         print options[num][1]()
-    
+    elif num == 4: # Lowest AP signal
+        print options[num][1]()
+    else:
+        print 'Unknown option'
 
 def getPacketFromServer():
     packetOut = server.getPacket()
