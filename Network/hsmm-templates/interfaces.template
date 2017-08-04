@@ -14,7 +14,7 @@ auto {wifi_adapter_name}
 iface {wifi_adapter_name} inet {wifi_protocol}
     address {wifi_ip_address}
     netmask {wifi_netmask}
-    gateway 10.0.0.1
+    #gateway 10.0.0.1
     wireless-mode {wifi_mode}
     wireless-channel {wifi_channel}
     wireless-essid {wifi_ssid}
