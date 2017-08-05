@@ -7,7 +7,7 @@ import time, datetime
 
 server = MeshNetworkUtil()
 server.startListening()
-server.startAPMonitor()
+#server.startAPMonitor()
 def getChoice(text):
     choice = raw_input(text)
     if choice == 'y' or choice == 'Y' or choice == 'yes' or choice == 'Yes':
@@ -61,7 +61,7 @@ def sendMessage():
         ip = raw_input('Enter IP : ')
         options[num][1](ip)
     elif num == 10: # Stop all APs
-        options[num][1]()
+        print str(options[num][1]())
     else:
         print 'Unknown option'
     
@@ -122,6 +122,7 @@ def close():
 def main():
     try :
         while True:
+            print 'MAIN: LOWEST SIGNAL = ' + str(server.getLowestSignal())
             print ''
             options = {1 : ('send packet',sendMessage) ,
                        2 : ('retrieve whole packet',getPacketFromServer),
@@ -137,10 +138,10 @@ def main():
             time.sleep(0.5)
             if options[num][0] == 'exit':
                 exit()
+            print 'MAIN: END OF LOOP'
     except Exception as e:
         print(e)
         main()
     
 if __name__ == "__main__":
     main()
-    

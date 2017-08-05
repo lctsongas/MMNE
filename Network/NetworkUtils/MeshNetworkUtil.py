@@ -4,7 +4,6 @@ import traceback, os, math, re
 from time import time
 from Queue import *
 import subprocess
-import re
 
 #Priority and packet flags defined below
 PQ_DEFAULT = 10         #Default priority in queue
@@ -147,9 +146,8 @@ class MeshNetworkUtil:
             newTime = time()
             elapsed = newTime - oldTime
             if elapsed < pollRate:
-                continue
-            print 'monitor top o loop'
-            oldTime = time()
+                #continue
+                oldTime = time()
             #Grab iwTable shell command output
             iwDump = self.iwTable()
             iwList = iwDump.split()
@@ -158,24 +156,24 @@ class MeshNetworkUtil:
             if len(iwList) == 0:
                 #No clients connected, no signal then
                 self.lowestSignal = 0
-                continue
+                #continue
             #Regex for MAC addresses
-            macRegEx = re.compile('\d\d\:\d\d:\d\d:\d\d:\d\d:\d\d')
+            macRegEx = '..:..:..:..:..:..'
             #Get all instances of MAC on AP
-            macList = macRegEx.finadall(iwDump)
+            macList = re.findall(macRegEx,iwDump)
             index = 1
+            
             for mac in macList:
+                
                 signal = abs(int(iwList[27*index]))
                 self.clients[mac] = signal
-                if signal >= signalThreshold and signal > self.lowestSignalOld:
-                    #current signal is lowest thus far
-                    self.lowestSignalOld = self.lowestSignal
+                if signal > self.lowestSignal:
+                    tmpValue = self.lowestSignal
                     self.lowestSignal = signal
+                    self.lowestSignalOld = tmpValue
 
     def getLowestSignal(self):
-        if self.apThread.isAlive():
-            return self.lowestSignal
-        return None 
+        return self.lowestSignal
 
     
     def getData(self):
@@ -208,10 +206,6 @@ class MeshNetworkUtil:
         return subprocess.check_output(["arp","-a"])
 
     def iwTable(self):
-        #iwShell = subprocess.Popen(["iw","dev", "wlan1", "station", "dump"],
-        #                                        stdout=subprocess.PIPE,
-        #                                        stderr=subprocess.PIPE)
-        #return iwShell.communicate()[0]
         return subprocess.check_output(['iw', 'dev', 'wlan1', 'station', 'dump'])
 
     def arpIP(self, ipaddr):
@@ -454,6 +448,5 @@ class MeshPacket:
     def getPacket(self):
         """Return RTP packet."""
         return self.header + self.payload
-
 
 
