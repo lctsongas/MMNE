@@ -1,0 +1,59 @@
+config olsrd
+	option LinkQualityFishEye '1'
+	option LinkQualityAlgorithm 'etx_ffeth'
+	option IpVersion '4'
+	option AllowNoInt 'yes'
+	option TosValue '16'
+	option Willingness '3'
+	option UseHysteresis 'no'
+	option LinkQualityLevel '2'
+	option Pollrate '0.05'
+	option TcRedundancy '2'
+	option MprCoverage '5'
+	option MainIp '10.0.0.1'
+	option RtTable '254'
+	option RtTableDefault '254'
+	option OlsrPort '698'
+	option DebugLevel '0'
+
+config Hna4
+	option netaddr '0.0.0.0'
+	option netmask '0.0.0.0'
+
+config LoadPlugin
+	option library 'olsrd_arprefresh.so.0.1'
+	option ignore '0'
+
+config LoadPlugin
+	option library 'olsrd_httpinfo.so.0.1'
+	list Net '0.0.0.0 0.0.0.0'
+	option Resolve 'true'
+	option ignore '0'
+
+config LoadPlugin
+	option library 'olsrd_nameservice.so.0.3'
+	option name 'OpenWRT'
+	option ignore '0'
+
+config Interface
+	list interface 'wlan'
+	option Mode 'mesh'
+	option Ip4Broadcast '0.0.0.0'
+	option HelloInterval '6.0'
+	option HelloValidityTime '600.0'
+	option TcInterval '0.5'
+	option TcValidityTime '300.0'
+	option MidInterval '10.0'
+	option MidValidityTime '300.0'
+	option HnaInterval '10.0'
+	option HnaValidityTime '300.0'
+
+config InterfaceDefaults
+
+config LoadPlugin
+	option library 'olsrd_jsoninfo.so.0.0'
+	option ignore '0'
+
+config LoadPlugin
+	option library 'olsrd_dyn_gw.so.0.5'
+	option ignore '0'
