@@ -127,6 +127,9 @@ NETCFG_PATH="$PKG_HOME/MMNE/Network/Config"
 #sudo chown root /usr/sbin/hostapd
 #sudo chmod 775 /usr/sbin/hostapd
 
+sudo apt-get install python-imaging
+sudo apt-get install python-imaging-tk
+
 sudo cp "$NETCFG_PATH/dhcpcd.conf" "/etc/dhcpcd.conf"
 
 sudo chmod -R 777 /home/pi/MMNE/
