@@ -91,7 +91,7 @@ HSMM_Path="$GIT_HOME"
 cd $HSMM_Path
 git clone https://github.com/urlgrey/hsmm-pi.git
 cd "$HSMM_Path/hsmm-pi"
-sudo runuser -l pi -c "./install.sh"
+sudo runuser -l pi -s "/home/pi/hsmm-pi/install.sh"
 echo "[GIT] HSMM-Pi Done!"
 
 #All git files downloaded successfully
@@ -127,6 +127,8 @@ NETCFG_PATH="$PKG_HOME/MMNE/Network/Config"
 #sudo chmod 775 /usr/sbin/hostapd
 
 sudo cp "$NETCFG_PATH/dhcpcd.conf" "/etc/dhcpcd.conf"
+
+sudo chmod -R 777 /home/pi/MMNE/
 
 echo "[NET] Network Setup Done!"
 echo "[PASSWORD] Changing password."
