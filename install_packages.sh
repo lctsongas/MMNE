@@ -90,6 +90,7 @@ echo "[GIT] HSMM-Pi"
 HSMM_Path="$GIT_HOME"
 cd $HSMM_Path
 git clone https://github.com/urlgrey/hsmm-pi.git
+sudo chmod -R 777 /home/pi/hsmm-pi/
 cd "$HSMM_Path/hsmm-pi"
 sudo runuser -l pi -s "/home/pi/hsmm-pi/install.sh"
 echo "[GIT] HSMM-Pi Done!"
