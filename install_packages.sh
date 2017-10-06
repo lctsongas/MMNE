@@ -42,63 +42,55 @@ ask() {
   done
 }
 
-PKG_HOME="/home/pi"
-GIT_HOME="/home/pi"
-mkdir $GIT_HOME
+Pi_Path="/home/pi"
 echo "Make sure you have internet connection before running!"
 echo "This step will take a long time. But is highly recommended"
 echo "if you are running this on a fresh RPi install"
 if ask "Update and upgrade RPi?" ; then
   echo "Updating libraries and stuff... This will take awhile"
   sleep 2
-  sudo apt-get update
-  sudo apt-get upgrade
+  sudo apt-get -y update
+  sudo apt-get -y upgrade
 fi
 
 sudo apt-get install -y git
 
 echo "Installing github dependencies:"
-cd $GIT_HOME
+cd $Pi_Path
 
 echo "[GIT] IMU Sensor"
-IMU_Path="$GIT_HOME"
 
-cd $IMU_Path
+cd $Pi_Path
 git clone https://github.com/adafruit/Adafruit_Python_BNO055.git
-cd "$IMU_Path/Adafruit_Python_BNO055"
+cd "$Pi_Path/Adafruit_Python_BNO055"
 sudo python setup.py install
 echo "[GIT] IMU Sensor Done!"
 
 echo "[GIT] ADC Sensor"
-ADC_Path="$GIT_HOME"
-cd $ADC_Path
+cd $Pi_Path
 git clone https://github.com/adafruit/Adafruit_Python_ADS1x15.git
-cd "$ADC_Path/Adafruit_Python_ADS1x15"
+cd "$Pi_Path/Adafruit_Python_ADS1x15"
 sudo python setup.py install
-
 echo "[GIT] ADC Sensor Done!"
 
 echo "[GIT] Motor HAT"
-MHAT_Path="$GIT_HOME"
-cd $MHAT_Path
+cd $Pi_Path
 git clone https://github.com/adafruit/Adafruit-Motor-HAT-Python-Library.git
-cd "$MHAT_Path/Adafruit-Motor-HAT-Python-Library"
+cd "$Pi_Path/Adafruit-Motor-HAT-Python-Library"
 sudo python setup.py install
 echo "[GIT] Motor HAT Done!"
 
 echo "[GIT] HSMM-Pi"
-HSMM_Path="$GIT_HOME"
-cd $HSMM_Path
+cd $Pi_Path
 git clone https://github.com/urlgrey/hsmm-pi.git
-sudo chmod -R 777 /home/pi/hsmm-pi/
-cd "$HSMM_Path/hsmm-pi"
-sudo runuser -l pi -s "/home/pi/hsmm-pi/install.sh"
+cd "$Pi_Path/hsmm-pi"
+sudo runuser -l pi -c "./install.sh"
 echo "[GIT] HSMM-Pi Done!"
 
 #All git files downloaded successfully
 
 echo "[GET] GPS"
-sudo apt-get install gpsd gpsd-clients python-gps
+sudo apt-get -y install gpsd gpsd-clients python-gps
 sudo systemctl stop gpsd.socket
 sudo systemctl disable gpsd.socket
 sudo gpsd /dev/ttyUSB0 -F /var/run/gpsd.sock
@@ -117,22 +109,26 @@ echo "[BOOT] boot files Done!"
 
 #Begin setting up network now
 echo "[NET] Setting up Network"
-NETCFG_PATH="$PKG_HOME/MMNE/Network/Config"
+NETCFG_PATH="$Pi_Path/MMNE/Network/Config"
 /bin/bash "$NETCFG_PATH/hsmm-pi_copier.sh"
 /bin/bash "$NETCFG_PATH/create_AP_IP.sh"
 
-#sudo cp "$NETCFG_PATH/hostapd.conf" "/etc/hostapd/"
-#sudo mv "/usr/sbin/hostapd" "/usr/sbin/hostapd.bak"
-#sudo cp "$NETCFG_PATH/hostapd" "/usr/sbin/"
-#sudo chown root /usr/sbin/hostapd
-#sudo chmod 775 /usr/sbin/hostapd
+#Begin setting up wi-fi splash-page
+echo "[SPLASH] Setting up Splash Page"
+cd $Pi_Path
+#Use older version until libmicrohttpd version >= 0.9.51
+sudo git clone -b v1 https://github.com/nodogsplash/nodogsplash.git
+sudo apt-get -y install debhelper dpkg-dev dh-systemd libmicrohttpd-dev
+sudo apt-get -y install build-essential devscripts hardening-includes
+sudo apt-get -y install iptables-persistent
 
-sudo apt-get install python-imaging
-sudo apt-get install python-imaging-tk
+cd "$Pi_Path/nodogsplash"
+sudo make
+sudo make install
+
+echo "[SPLASH] Splash setup done!"
 
 sudo cp "$NETCFG_PATH/dhcpcd.conf" "/etc/dhcpcd.conf"
-
-sudo chmod -R 777 /home/pi/MMNE/
 
 echo "[NET] Network Setup Done!"
 echo "[PASSWORD] Changing password."
