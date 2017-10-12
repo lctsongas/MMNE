@@ -56,7 +56,7 @@ if ask "Update and upgrade RPi?" ; then
 fi
 
 sudo apt-get install -y git
-
+sudo apt-get install -y hostapd
 echo "Installing github dependencies:"
 cd $GIT_HOME
 
